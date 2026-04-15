@@ -4,7 +4,16 @@
 set -euo pipefail
 
 ROOT="$(cd "$(dirname "$0")" && pwd)"
-cd "$ROOT/backend" || { echo "Missing backend at $ROOT/backend"; ls -la "$ROOT"; exit 1; }
+# Repo layout: root/backend. Docker image layout: /app/backend already.
+if [ -d "$ROOT/backend" ]; then
+  cd "$ROOT/backend"
+elif [ -f "$ROOT/main.py" ]; then
+  cd "$ROOT"
+else
+  echo "Missing backend. Tried $ROOT/backend and $ROOT"
+  ls -la "$ROOT"
+  exit 1
+fi
 
 PORT="${PORT:-8000}"
 

@@ -26,3 +26,6 @@
 # Large vendored project not needed for this deploy
 openalgo-main
 
+# Dockerfile-based deploy does not need repo scripts inside build context?
+# (Keep scripts included)
+

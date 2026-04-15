@@ -5,8 +5,6 @@ import { api, setToken } from "../api.js";
 
 export default function Login() {
   const nav = useNavigate();
-  const [applicationId, setApplicationId] = useState("");
-  const [apiSecret, setApiSecret] = useState("");
   const [clientCode, setClientCode] = useState("");
   const [password, setPassword] = useState("");
   const [totp, setTotp] = useState("");
@@ -23,8 +21,6 @@ export default function Login() {
       const res = await api("/api/auth/login", {
         method: "POST",
         body: JSON.stringify({
-          application_id: applicationId,
-          api_secret: apiSecret,
           client_code: clientCode,
           password,
           totp,
@@ -41,9 +37,9 @@ export default function Login() {
 
   const oauth = async () => {
     try {
-      const u = await api(`/api/auth/oauth/rupeezzy/url?application_id=${encodeURIComponent(applicationId)}`);
+      const u = await api(`/api/auth/oauth/rupeezzy/url`);
       if (!u.url) {
-        setErr(u.message || "Set Application ID first");
+        setErr(u.message || "Vortex flow URL not configured");
         return;
       }
       window.open(u.url, "_blank", "noopener,noreferrer");
@@ -102,53 +98,6 @@ export default function Login() {
 
           <form className="space-y-4" onSubmit={submit}>
             <div className="space-y-2">
-              <label className="block px-1 text-xs font-medium text-on-surface-variant" htmlFor="app-id">
-                Vortex application id
-              </label>
-              <div className="relative">
-                <div className="pointer-events-none absolute inset-y-0 left-0 flex items-center pl-3">
-                  <MsIcon name="key" className="text-sm text-outline" />
-                </div>
-                <input
-                  id="app-id"
-                  className="input-qe pl-10"
-                  autoComplete="off"
-                  placeholder="From Vortex developer portal"
-                  value={applicationId}
-                  onChange={(e) => setApplicationId(e.target.value)}
-                />
-              </div>
-            </div>
-
-            <div className="space-y-2">
-              <label className="block px-1 text-xs font-medium text-on-surface-variant" htmlFor="api-secret">
-                x-api-key (API secret)
-              </label>
-              <div className="relative">
-                <div className="pointer-events-none absolute inset-y-0 left-0 flex items-center pl-3">
-                  <MsIcon name="lock" className="text-sm text-outline" />
-                </div>
-                <input
-                  id="api-secret"
-                  type={showSecret ? "text" : "password"}
-                  className="input-qe pl-10 pr-10"
-                  autoComplete="off"
-                  placeholder="Server-side secret — never expose in frontend apps"
-                  value={apiSecret}
-                  onChange={(e) => setApiSecret(e.target.value)}
-                />
-                <button
-                  type="button"
-                  className="absolute inset-y-0 right-0 flex items-center pr-3 text-outline hover:text-on-surface"
-                  onClick={() => setShowSecret((s) => !s)}
-                  aria-label={showSecret ? "Hide secret" : "Show secret"}
-                >
-                  <MsIcon name={showSecret ? "visibility_off" : "visibility"} className="text-sm" />
-                </button>
-              </div>
-            </div>
-
-            <div className="space-y-2">
               <label className="block px-1 text-xs font-medium text-on-surface-variant" htmlFor="client-code">
                 Client code
               </label>
@@ -167,7 +116,7 @@ export default function Login() {
               </label>
               <input
                 id="pwd"
-                type="password"
+                type={showSecret ? "text" : "password"}
                 className="input-qe"
                 autoComplete="current-password"
                 value={password}

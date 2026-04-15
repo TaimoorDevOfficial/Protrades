@@ -10,6 +10,8 @@ class Settings(BaseSettings):
     database_url: str = "sqlite:///./protrades.db"  # override with DATABASE_URL
     rupeezzy_base: str = "https://vortex-api.rupeezy.in/v2"
     rupeezzy_mock: bool = False
+    vortex_application_id: str = ""
+    vortex_x_api_key: str = ""
     claude_key: str = ""
     claude_model: str = "claude-sonnet-4-20250514"
     jwt_algorithm: str = "HS256"

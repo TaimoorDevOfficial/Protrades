@@ -3,7 +3,7 @@ from datetime import datetime, timedelta, timezone
 
 import httpx
 from fastapi import APIRouter, Depends, HTTPException, Query
-from pydantic import BaseModel, model_validator
+from pydantic import BaseModel
 from sqlalchemy.orm import Session
 
 from config import Settings, get_settings
@@ -35,18 +35,9 @@ def _jwt_expires_delta(settings: Settings, broker_expires_at: datetime | None) -
 class LoginBody(BaseModel):
     """Rupeezy Vortex retail login: application id + x-api-key + client credentials + TOTP."""
 
-    application_id: str = ""
-    api_secret: str = ""
     client_code: str = ""
     password: str = ""
     totp: str = ""
-    api_key: str = ""
-
-    @model_validator(mode="after")
-    def _merge_legacy_aliases(self):
-        if not (self.application_id or "").strip() and (self.api_key or "").strip():
-            self.application_id = self.api_key.strip()
-        return self
 
 
 class RupeezySsoBody(BaseModel):
@@ -61,12 +52,17 @@ class OAuthStart(BaseModel):
 async def login(body: LoginBody, db: Session = Depends(get_db)):
     settings = get_settings()
     client = RupeezzyClient(settings)
-    app_id = (body.application_id or "").strip()
-    xkey = (body.api_secret or "").strip()
-    if not app_id or not xkey or not (body.client_code or "").strip() or not body.password or not (body.totp or "").strip():
+    app_id = (settings.vortex_application_id or "").strip()
+    xkey = (settings.vortex_x_api_key or "").strip()
+    if not app_id or not xkey:
         raise HTTPException(
             status_code=400,
-            detail="Vortex login requires application_id, api_secret (x-api-key), client_code, password, and totp.",
+            detail="Missing Vortex credentials in backend .env. Set VORTEX_APPLICATION_ID and VORTEX_X_API_KEY, restart backend.",
+        )
+    if not (body.client_code or "").strip() or not body.password or not (body.totp or "").strip():
+        raise HTTPException(
+            status_code=400,
+            detail="Vortex login requires client_code, password, and totp.",
         )
     try:
         login_resp = await client.login_retail(
@@ -144,6 +140,7 @@ async def login(body: LoginBody, db: Session = Depends(get_db)):
     )
     from services.settings_store import set_setting
 
+    # Store for SSO token exchange convenience (optional)
     set_setting(db, "rupeezzy_api_key", app_id, encrypt=True)
     set_setting(db, "rupeezzy_api_secret", xkey, encrypt=True)
 
@@ -258,11 +255,12 @@ async def rupeezzy_oauth_url(
     """Official Vortex browser login (partner / SSO). User completes login; your redirect receives ?auth=... to exchange via POST /auth/rupeezzy/session."""
     from services.settings_store import get_setting
 
-    aid = (application_id or "").strip() or (get_setting(db, "rupeezzy_api_key") or "")
+    # Prefer backend env, then query, then stored settings
+    aid = (get_settings().vortex_application_id or "").strip() or (application_id or "").strip() or (get_setting(db, "rupeezzy_api_key") or "")
     if not aid:
         return {
             "url": "",
-            "message": "Set Application ID on the login form (or save keys in Settings) before opening the Vortex flow URL.",
+            "message": "Set VORTEX_APPLICATION_ID in backend .env (or save keys in Settings) before opening the Vortex flow URL.",
         }
     return {
         "url": f"https://flow.rupeezy.in?applicationId={aid}&cb_param=protrades",

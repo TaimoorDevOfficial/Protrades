@@ -12,6 +12,8 @@ export default function Login() {
   const [err, setErr] = useState("");
   const [loading, setLoading] = useState(false);
   const [guestLoading, setGuestLoading] = useState(false);
+  const [ssoUrl, setSsoUrl] = useState("");
+  const [ssoLoading, setSsoLoading] = useState(false);
 
   const submit = async (e) => {
     e.preventDefault();
@@ -45,6 +47,33 @@ export default function Login() {
       window.open(u.url, "_blank", "noopener,noreferrer");
     } catch {
       setErr("Could not load Vortex flow URL");
+    }
+  };
+
+  const completeSso = async (e) => {
+    e.preventDefault();
+    setErr("");
+    const raw = ssoUrl.trim();
+    if (!raw) {
+      setErr("Paste the full redirect URL from the browser after flow.rupeezy.in login, or paste the token only.");
+      return;
+    }
+    setSsoLoading(true);
+    try {
+      const res = await api("/api/auth/rupeezzy/session", {
+        method: "POST",
+        body: JSON.stringify(
+          raw.startsWith("http://") || raw.startsWith("https://")
+            ? { callback_url: raw }
+            : { auth_code: raw }
+        ),
+      });
+      setToken(res.access_token);
+      nav("/dashboard", { replace: true });
+    } catch (e2) {
+      setErr(e2.message || "SSO login failed");
+    } finally {
+      setSsoLoading(false);
     }
   };
 
@@ -96,7 +125,20 @@ export default function Login() {
             </p>
           </div>
 
-          <form className="space-y-4" onSubmit={submit}>
+          <details className="rounded-lg border border-outline-variant/15 bg-surface-container-low/40 px-3 py-2 text-xs text-on-surface-variant">
+            <summary className="cursor-pointer font-medium text-on-surface">Where do client code, password &amp; TOTP come from?</summary>
+            <p className="mt-2 leading-relaxed">
+              These are your <strong>Rupeezy / trading account</strong> credentials, not the Vortex app id.{" "}
+              <strong>Client code</strong> is your broker user id (often shown on statements or the Rupeezy app).{" "}
+              <strong>Password</strong> is your trading login password.{" "}
+              <strong>TOTP</strong> is the 6-digit code from an authenticator app after you enable 2FA for trading in the Rupeezy / Vortex
+              portal (same as logging in on the broker site).
+            </p>
+          </details>
+
+          {err && <p className="mt-3 text-sm text-tertiary-container">{err}</p>}
+
+          <form className="mt-4 space-y-4" onSubmit={submit}>
             <div className="space-y-2">
               <label className="block px-1 text-xs font-medium text-on-surface-variant" htmlFor="client-code">
                 Client code
@@ -139,37 +181,59 @@ export default function Login() {
               />
             </div>
 
-            {err && <p className="text-sm text-tertiary-container">{err}</p>}
-
             <button type="submit" disabled={loading} className="btn-primary-qe disabled:opacity-50">
               {loading ? "Connecting…" : "Initialize terminal"}
               <MsIcon name="arrow_forward" className="text-sm" />
             </button>
-
-            <div className="relative py-2">
-              <div className="absolute inset-0 flex items-center">
-                <div className="w-full border-t border-outline-variant/10" />
-              </div>
-              <div className="relative flex justify-center text-[10px] uppercase tracking-widest text-outline">
-                <span className="bg-surface-container px-3">Or explore</span>
-              </div>
-            </div>
-
-            <button type="button" onClick={oauth} className="btn-secondary-qe">
-              <MsIcon name="account_balance" />
-              Vortex browser login (flow.rupeezy.in)
-            </button>
-
-            <button
-              type="button"
-              onClick={guestLogin}
-              disabled={guestLoading || loading}
-              className="flex w-full items-center justify-center gap-2 rounded-md border border-outline-variant/25 bg-surface-container-low py-3 text-sm font-medium text-on-surface transition-colors hover:bg-surface-container disabled:opacity-50"
-            >
-              <MsIcon name="science" className="text-lg" />
-              {guestLoading ? "Opening demo…" : "Continue as guest"}
-            </button>
           </form>
+
+          <div className="relative py-4">
+            <div className="absolute inset-0 flex items-center">
+              <div className="w-full border-t border-outline-variant/10" />
+            </div>
+            <div className="relative flex justify-center text-[10px] uppercase tracking-widest text-outline">
+              <span className="bg-surface-container px-3">Or explore</span>
+            </div>
+          </div>
+
+          <button type="button" onClick={oauth} className="btn-secondary-qe w-full">
+            <MsIcon name="account_balance" />
+            Vortex browser login (flow.rupeezy.in)
+          </button>
+
+          <form className="mt-4 space-y-2" onSubmit={completeSso}>
+            <div className="rounded-lg border border-outline-variant/15 bg-surface-container-low/30 p-3">
+              <p className="text-xs font-medium text-on-surface">After browser login — paste redirect link</p>
+              <p className="mt-1 text-[11px] leading-relaxed text-on-surface-variant">
+                If you did not configure a callback URL, Rupeezy may redirect to a page whose address bar contains the auth token.
+                Copy the <strong>entire URL</strong> from the browser and paste it below (or paste only the token string).
+              </p>
+              <textarea
+                className="input-qe mt-3 min-h-[88px] resize-y font-mono text-xs"
+                placeholder="https://...?auth=... or paste token only"
+                value={ssoUrl}
+                onChange={(e) => setSsoUrl(e.target.value)}
+                autoComplete="off"
+              />
+              <button
+                type="submit"
+                disabled={ssoLoading || loading}
+                className="mt-2 w-full rounded-md border border-primary/40 bg-surface-container-high py-2.5 text-sm font-medium text-primary hover:bg-surface-container-highest disabled:opacity-50"
+              >
+                {ssoLoading ? "Completing…" : "Complete browser login"}
+              </button>
+            </div>
+          </form>
+
+          <button
+            type="button"
+            onClick={guestLogin}
+            disabled={guestLoading || loading}
+            className="mt-4 flex w-full items-center justify-center gap-2 rounded-md border border-outline-variant/25 bg-surface-container-low py-3 text-sm font-medium text-on-surface transition-colors hover:bg-surface-container disabled:opacity-50"
+          >
+            <MsIcon name="science" className="text-lg" />
+            {guestLoading ? "Opening demo…" : "Continue as guest"}
+          </button>
 
           <p className="mt-8 text-center text-xs text-on-surface-variant">
             Uses Rupeezy Vortex (<code className="text-[10px]">vortex-api.rupeezy.in</code>). Session JWT is stored locally

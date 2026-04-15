@@ -1,9 +1,10 @@
 import json
 from datetime import datetime, timedelta, timezone
+from urllib.parse import parse_qs, urlparse
 
 import httpx
 from fastapi import APIRouter, Depends, HTTPException, Query
-from pydantic import BaseModel
+from pydantic import BaseModel, model_validator
 from sqlalchemy.orm import Session
 
 from config import Settings, get_settings
@@ -40,8 +41,47 @@ class LoginBody(BaseModel):
     totp: str = ""
 
 
+def _extract_vortex_auth_from_callback(raw: str) -> str:
+    """
+    Parse auth token from a full redirect URL after flow.rupeezy.in, or accept a raw token string.
+    Tries query params: auth, token, code, auth_token — and URL fragment (#auth=...).
+    """
+    s = (raw or "").strip()
+    if not s:
+        raise ValueError("Empty value")
+    if not (s.startswith("http://") or s.startswith("https://")):
+        return s
+    parsed = urlparse(s)
+    qs = parse_qs(parsed.query)
+    for key in ("auth", "token", "code", "auth_token", "access_token"):
+        if key in qs and qs[key] and str(qs[key][0]).strip():
+            return str(qs[key][0]).strip()
+    if parsed.fragment:
+        frag_qs = parse_qs(parsed.fragment)
+        for key in ("auth", "token", "code", "auth_token"):
+            if key in frag_qs and frag_qs[key] and str(frag_qs[key][0]).strip():
+                return str(frag_qs[key][0]).strip()
+    raise ValueError(
+        "Could not find auth token in that URL. Paste the full address from the browser bar after login, "
+        "or paste only the token value."
+    )
+
+
 class RupeezySsoBody(BaseModel):
-    auth_code: str
+    """Either paste `callback_url` (full redirect) or `auth_code` (token only)."""
+
+    auth_code: str = ""
+    callback_url: str = ""
+
+    @model_validator(mode="after")
+    def _resolve_auth(self):
+        if (self.callback_url or "").strip():
+            self.auth_code = _extract_vortex_auth_from_callback(self.callback_url)
+        ac = (self.auth_code or "").strip()
+        if not ac:
+            raise ValueError("Provide callback_url (full redirect link) or auth_code (token from Rupeezy)")
+        self.auth_code = ac
+        return self
 
 
 class OAuthStart(BaseModel):
@@ -270,14 +310,17 @@ async def rupeezzy_oauth_url(
 
 @router.post("/rupeezzy/session")
 async def rupeezzy_exchange_sso(body: RupeezySsoBody, db: Session = Depends(get_db)):
-    """Exchange ?auth= code from https://flow.rupeezy.in (Vortex partner login). Requires stored x-api-key + application id in Settings."""
+    """Exchange auth from https://flow.rupeezy.in (Vortex SSO). Uses VORTEX_* from env, then Settings KV."""
     from services.settings_store import get_setting
 
     settings = get_settings()
-    app_id = (get_setting(db, "rupeezzy_api_key") or "").strip()
-    xkey = (get_setting(db, "rupeezzy_api_secret") or "").strip()
+    app_id = (settings.vortex_application_id or "").strip() or (get_setting(db, "rupeezzy_api_key") or "").strip()
+    xkey = (settings.vortex_x_api_key or "").strip() or (get_setting(db, "rupeezzy_api_secret") or "").strip()
     if not app_id or not xkey:
-        raise HTTPException(status_code=400, detail="Save application id and x-api-key in Settings (or log in via retail once) first.")
+        raise HTTPException(
+            status_code=400,
+            detail="Set VORTEX_APPLICATION_ID and VORTEX_X_API_KEY in server .env (or save in Settings).",
+        )
     client = RupeezzyClient(settings)
     try:
         login_resp = await client.exchange_session_token(

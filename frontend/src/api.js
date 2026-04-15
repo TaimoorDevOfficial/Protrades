@@ -18,6 +18,19 @@ export function setToken(t) {
   else localStorage.removeItem(TOKEN_KEY);
 }
 
+/** Persist ProTrades JWT after login (password, SSO paste, or guest). Returns false if missing/invalid. */
+export function saveAuthSession(accessToken) {
+  if (accessToken == null || typeof accessToken !== "string" || !accessToken.trim()) {
+    return false;
+  }
+  try {
+    localStorage.setItem(TOKEN_KEY, accessToken.trim());
+    return true;
+  } catch {
+    return false;
+  }
+}
+
 export async function api(path, opts = {}) {
   const base = import.meta.env?.VITE_API_BASE_URL || "";
   const headers = { ...(opts.headers || {}) };

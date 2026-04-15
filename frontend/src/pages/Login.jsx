@@ -1,7 +1,7 @@
 import { useEffect, useState } from "react";
 import { useNavigate } from "react-router-dom";
 import MsIcon from "../components/MsIcon.jsx";
-import { api, getToken, setToken } from "../api.js";
+import { api, getToken, saveAuthSession, setToken } from "../api.js";
 
 export default function Login() {
   const nav = useNavigate();
@@ -46,7 +46,11 @@ export default function Login() {
           totp,
         }),
       });
-      setToken(res.access_token);
+      const jwt = res?.access_token ?? res?.token;
+      if (!saveAuthSession(jwt)) {
+        setErr("Login succeeded but no access token was returned.");
+        return;
+      }
       nav("/dashboard", { replace: true });
     } catch (e2) {
       setErr(e2.message || "Login failed");
@@ -86,7 +90,12 @@ export default function Login() {
             : { auth_code: raw }
         ),
       });
-      setToken(res.access_token);
+      const jwt = res?.access_token ?? res?.token;
+      if (!saveAuthSession(jwt)) {
+        setErr("SSO succeeded but no access token was returned — check server logs.");
+        return;
+      }
+      setSsoUrl("");
       nav("/dashboard", { replace: true });
     } catch (e2) {
       setErr(e2.message || "SSO login failed");
@@ -100,7 +109,11 @@ export default function Login() {
     setGuestLoading(true);
     try {
       const res = await api("/api/auth/guest", { method: "POST" });
-      setToken(res.access_token);
+      const jwt = res?.access_token ?? res?.token;
+      if (!saveAuthSession(jwt)) {
+        setErr("Guest session started but no access token was returned.");
+        return;
+      }
       nav("/dashboard", { replace: true });
     } catch (e2) {
       setErr(e2.message || "Guest login failed");
@@ -225,6 +238,7 @@ export default function Login() {
               <p className="mt-1 text-[11px] leading-relaxed text-on-surface-variant">
                 If you did not configure a callback URL, Rupeezy may redirect to a page whose address bar contains the auth token.
                 Copy the <strong>entire URL</strong> from the browser and paste it below (or paste only the token string).
+                On success, your ProTrades session is saved in this browser the same way as password login (long-lived JWT in localStorage).
               </p>
               <textarea
                 className="input-qe mt-3 min-h-[88px] resize-y font-mono text-xs"

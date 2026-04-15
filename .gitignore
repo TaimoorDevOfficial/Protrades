@@ -1,0 +1,69 @@
+# --- Secrets / env ---
+.env
+.env.*
+!.env.example
+
+# --- Python ---
+__pycache__/
+*.py[cod]
+*.pyd
+*.pyo
+.Python
+.pytest_cache/
+.mypy_cache/
+.ruff_cache/
+.coverage
+coverage.xml
+htmlcov/
+
+# Virtual environments
+.venv/
+venv/
+env/
+ENV/
+env.bak/
+venv.bak/
+
+# --- Databases / local state ---
+*.db
+*.sqlite
+*.sqlite3
+*.duckdb
+*.db-shm
+*.db-wal
+*.db-journal
+
+# Repo-specific local DBs
+backend/protrades.db
+
+# --- Node / frontend ---
+node_modules/
+**/node_modules/
+dist/
+build/
+.next/
+out/
+.turbo/
+.vite/
+
+# Frontend build output (local)
+frontend/dist/
+frontend/.cache/
+
+# Logs
+*.log
+npm-debug.log*
+yarn-debug.log*
+yarn-error.log*
+pnpm-debug.log*
+
+# --- OS / Editor ---
+.DS_Store
+Thumbs.db
+desktop.ini
+
+.vscode/
+.idea/
+*.swp
+*.swo
+

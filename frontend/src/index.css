@@ -1,0 +1,70 @@
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+
+@layer base {
+  .material-symbols-outlined {
+    font-variation-settings: "FILL" 0, "wght" 400, "GRAD" 0, "opsz" 24;
+  }
+}
+
+@layer components {
+  .glass-panel {
+    background: rgba(29, 32, 35, 0.65);
+    backdrop-filter: blur(40px);
+    -webkit-backdrop-filter: blur(40px);
+  }
+
+  .trading-pattern-bg {
+    background-image: radial-gradient(circle at 2px 2px, rgba(164, 230, 255, 0.05) 1px, transparent 0);
+    background-size: 32px 32px;
+  }
+
+  .input-qe {
+    @apply block w-full rounded-md border-none bg-surface-container-high py-3 pl-3 pr-3 text-sm text-on-surface placeholder:text-outline/50 transition-all focus:ring-1 focus:ring-primary;
+  }
+
+  .btn-primary-qe {
+    @apply flex w-full items-center justify-center gap-2 rounded-md bg-gradient-to-br from-primary to-primary-container py-3.5 px-4 text-sm font-semibold tracking-wide text-on-primary-fixed shadow-lg shadow-primary/20 transition-all hover:shadow-primary/40 active:scale-[0.98];
+  }
+
+  .btn-secondary-qe {
+    @apply flex w-full items-center justify-center gap-2 rounded-md border border-secondary/20 bg-surface-container-highest py-3.5 px-4 text-sm font-medium text-secondary transition-all hover:bg-secondary/10 active:opacity-80;
+  }
+
+  .card-qe {
+    @apply rounded-lg bg-surface-container p-6;
+  }
+
+  .page-title {
+    @apply font-headline text-2xl font-bold tracking-tight text-on-surface;
+  }
+
+  .page-sub {
+    @apply mt-1 text-sm text-on-surface-variant;
+  }
+
+  .table-qe thead {
+    @apply text-[10px] font-medium uppercase tracking-wider text-on-surface-variant/80;
+  }
+
+  .table-qe tbody tr {
+    @apply transition-colors hover:bg-surface-bright/30;
+  }
+}
+
+.numeric {
+  @apply font-mono tabular-nums;
+}
+
+::-webkit-scrollbar {
+  width: 6px;
+  height: 6px;
+}
+::-webkit-scrollbar-track {
+  background: #111417;
+}
+::-webkit-scrollbar-thumb {
+  background: #323538;
+  border-radius: 10px;
+}

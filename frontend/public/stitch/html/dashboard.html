@@ -1,0 +1,423 @@
+<!DOCTYPE html>
+
+<html class="dark" lang="en"><head>
+<meta charset="utf-8"/>
+<meta content="width=device-width, initial-scale=1.0" name="viewport"/>
+<title>Protrades Observatory | Precision Trading</title>
+<script src="https://cdn.tailwindcss.com?plugins=forms,container-queries"></script>
+<link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&amp;family=Space+Grotesk:wght@300;400;500;600;700&amp;display=swap" rel="stylesheet"/>
+<link href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:wght,FILL@100..700,0..1&amp;display=swap" rel="stylesheet"/>
+<link href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:wght,FILL@100..700,0..1&amp;display=swap" rel="stylesheet"/>
+<script id="tailwind-config">
+      tailwind.config = {
+        darkMode: "class",
+        theme: {
+          extend: {
+            "colors": {
+                    "error-container": "#93000a",
+                    "on-error": "#690005",
+                    "on-primary-fixed-variant": "#004e60",
+                    "surface-container-lowest": "#0b0e11",
+                    "outline-variant": "#3c494e",
+                    "on-secondary": "#00391f",
+                    "surface-bright": "#37393d",
+                    "on-secondary-fixed-variant": "#00522f",
+                    "surface": "#111417",
+                    "inverse-primary": "#00677f",
+                    "surface-tint": "#4cd6ff",
+                    "primary": "#a4e6ff",
+                    "on-surface-variant": "#bbc9cf",
+                    "outline": "#859399",
+                    "tertiary-fixed-dim": "#ffb4aa",
+                    "primary-container": "#00d1ff",
+                    "on-secondary-container": "#004729",
+                    "error": "#ffb4ab",
+                    "secondary-fixed": "#66fdac",
+                    "primary-fixed-dim": "#4cd6ff",
+                    "primary-fixed": "#b7eaff",
+                    "inverse-surface": "#e1e2e7",
+                    "on-tertiary": "#690003",
+                    "inverse-on-surface": "#2e3134",
+                    "background": "#111417",
+                    "tertiary-fixed": "#ffdad5",
+                    "on-tertiary-container": "#a20007",
+                    "on-tertiary-fixed-variant": "#930005",
+                    "on-background": "#e1e2e7",
+                    "secondary": "#44e092",
+                    "on-secondary-fixed": "#002110",
+                    "on-primary-container": "#00566a",
+                    "on-surface": "#e1e2e7",
+                    "on-primary-fixed": "#001f28",
+                    "surface-container-low": "#191c1f",
+                    "on-tertiary-fixed": "#410001",
+                    "surface-container": "#1d2023",
+                    "surface-dim": "#111417",
+                    "secondary-fixed-dim": "#44e092",
+                    "surface-container-high": "#272a2e",
+                    "on-error-container": "#ffdad6",
+                    "surface-variant": "#323538",
+                    "on-primary": "#003543",
+                    "surface-container-highest": "#323538",
+                    "tertiary-container": "#ffaba0",
+                    "tertiary": "#ffd2cc",
+                    "secondary-container": "#03c177"
+            },
+            "borderRadius": {
+                    "DEFAULT": "0.125rem",
+                    "lg": "0.25rem",
+                    "xl": "0.5rem",
+                    "full": "0.75rem"
+            },
+            "fontFamily": {
+                    "headline": ["Space Grotesk"],
+                    "body": ["Inter"],
+                    "label": ["Inter"]
+            }
+          },
+        },
+      }
+    </script>
+<style>
+        .material-symbols-outlined {
+            font-variation-settings: 'FILL' 0, 'wght' 400, 'GRAD' 0, 'opsz' 24;
+        }
+        .glass-panel {
+            background: rgba(29, 32, 35, 0.6);
+            backdrop-filter: blur(20px);
+        }
+        ::-webkit-scrollbar {
+            width: 4px;
+        }
+        ::-webkit-scrollbar-track {
+            background: #111417;
+        }
+        ::-webkit-scrollbar-thumb {
+            background: #323538;
+            border-radius: 10px;
+        }
+    </style>
+</head>
+<body class="bg-surface-container-lowest text-on-surface font-body selection:bg-primary/30">
+<!-- SideNavBar Anchor -->
+<aside class="fixed left-0 top-0 h-screen w-64 z-40 bg-[#111417] border-r-0 font-['Space_Grotesk'] text-sm tracking-tight flex flex-col">
+<div class="p-6">
+<div class="flex items-center gap-3">
+<div class="w-10 h-10 bg-gradient-to-br from-primary to-primary-container rounded flex items-center justify-center">
+<span class="material-symbols-outlined text-on-primary-fixed font-bold">query_stats</span>
+</div>
+<div>
+<h1 class="font-['Space_Grotesk'] font-bold text-[#A4E6FF] text-xl leading-none">Protrades</h1>
+<p class="text-[10px] uppercase tracking-[0.2em] opacity-50 mt-1">Precision Trading</p>
+</div>
+</div>
+</div>
+<nav class="flex-1 px-4 mt-4 space-y-1">
+<div class="bg-[#323538] text-[#A4E6FF] font-semibold flex items-center gap-3 px-4 py-3 rounded-lg scale-95 duration-150 cursor-pointer">
+<span class="material-symbols-outlined" style="font-variation-settings: 'FILL' 1;">dashboard</span>
+<span>Dashboard</span>
+</div>
+<div class="text-[#E1E2E7] opacity-70 hover:bg-[#1D2023] hover:opacity-100 transition-colors flex items-center gap-3 px-4 py-3 rounded-lg cursor-pointer">
+<span class="material-symbols-outlined">precision_manufacturing</span>
+<span>Strategy</span>
+</div>
+<div class="text-[#E1E2E7] opacity-70 hover:bg-[#1D2023] hover:opacity-100 transition-colors flex items-center gap-3 px-4 py-3 rounded-lg cursor-pointer">
+<span class="material-symbols-outlined">webhook</span>
+<span>Webhook</span>
+</div>
+<div class="text-[#E1E2E7] opacity-70 hover:bg-[#1D2023] hover:opacity-100 transition-colors flex items-center gap-3 px-4 py-3 rounded-lg cursor-pointer">
+<span class="material-symbols-outlined">account_balance_wallet</span>
+<span>Portfolio</span>
+</div>
+<div class="text-[#E1E2E7] opacity-70 hover:bg-[#1D2023] hover:opacity-100 transition-colors flex items-center gap-3 px-4 py-3 rounded-lg cursor-pointer">
+<span class="material-symbols-outlined">visibility</span>
+<span>Watchlist</span>
+</div>
+<div class="text-[#E1E2E7] opacity-70 hover:bg-[#1D2023] hover:opacity-100 transition-colors flex items-center gap-3 px-4 py-3 rounded-lg cursor-pointer mt-auto">
+<span class="material-symbols-outlined">settings</span>
+<span>Settings</span>
+</div>
+</nav>
+<div class="p-6 mt-auto border-t border-outline-variant/10">
+<div class="flex items-center gap-3">
+<div class="relative">
+<img class="w-10 h-10 rounded-full object-cover" data-alt="close up portrait of a professional trader in a dark studio setting with cinematic lighting" src="https://lh3.googleusercontent.com/aida-public/AB6AXuCHA17b-_frqZBo-_7kUt1oUrJzAAWnvu3S3N3aXuwmv2jBcnzUQRFFTI_0F-_7vEbHU4gNJdYJbTMU5XKUrvuXZN321-J_d7G6QwHdcZV03E2wkTCYnd8lYDjObgoG4e_CymvpWQKAYKxW1S_9IOhyiu_R0Kva9IutvJzigK8OiWMX6BG9cOYSkbN8jOnwXgDGnSG9Tezdc-N9qdTYxF5ud1G06Qb4U7RFKYnI5VrWFkkEle8WEPR7TDWimbEKFNJH13-xRLewjcM"/>
+<div class="absolute bottom-0 right-0 w-3 h-3 bg-secondary rounded-full border-2 border-[#111417]"></div>
+</div>
+<div class="overflow-hidden">
+<p class="text-sm font-medium truncate">Alex Rivers</p>
+<p class="text-[10px] opacity-50 truncate">Institutional Tier</p>
+</div>
+</div>
+</div>
+</aside>
+<!-- TopNavBar Anchor -->
+<header class="fixed top-0 right-0 left-0 z-30 h-16 bg-[#111417]/80 backdrop-blur-xl flex items-center justify-between px-6 pl-72 shadow-2xl shadow-black/50">
+<div class="flex items-center gap-8">
+<div class="flex items-center gap-6 text-[#E1E2E7] font-['Inter'] text-xs font-medium tabular-nums">
+<div class="flex items-center gap-2">
+<span class="opacity-50">NIFTY</span>
+<span class="text-secondary">24,150.20 (+0.45%)</span>
+</div>
+<div class="flex items-center gap-2">
+<span class="opacity-50">SENSEX</span>
+<span class="text-secondary">79,230.15 (+0.32%)</span>
+</div>
+</div>
+</div>
+<div class="flex items-center gap-4">
+<div class="flex items-center gap-1 bg-surface-container-high/50 px-3 py-1.5 rounded-full border border-outline-variant/10">
+<span class="material-symbols-outlined text-[18px] opacity-50">search</span>
+<input class="bg-transparent border-none focus:ring-0 text-xs w-48 text-on-surface" placeholder="Search instruments..." type="text"/>
+</div>
+<div class="flex items-center gap-2">
+<button class="w-10 h-10 flex items-center justify-center text-[#E1E2E7] hover:text-white transition-opacity active:opacity-80">
+<span class="material-symbols-outlined">notifications</span>
+</button>
+<button class="w-10 h-10 flex items-center justify-center text-[#E1E2E7] hover:text-white transition-opacity active:opacity-80">
+<span class="material-symbols-outlined">smart_toy</span>
+</button>
+<button class="w-10 h-10 flex items-center justify-center text-[#A4E6FF] active:opacity-80">
+<span class="material-symbols-outlined">account_circle</span>
+</button>
+</div>
+</div>
+</header>
+<!-- Main Canvas -->
+<main class="pl-64 pt-16 min-h-screen">
+<div class="p-8 max-w-[1600px] mx-auto space-y-8">
+<!-- Summary Grid -->
+<div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6">
+<!-- Portfolio Total -->
+<div class="bg-surface-container p-6 rounded-lg relative overflow-hidden group">
+<div class="absolute top-0 right-0 w-32 h-32 bg-primary/5 rounded-full -mr-16 -mt-16 blur-3xl group-hover:bg-primary/10 transition-colors"></div>
+<p class="text-label text-xs opacity-50 uppercase tracking-widest">Total Portfolio</p>
+<div class="mt-4 flex items-baseline gap-2">
+<h2 class="font-headline text-3xl font-bold text-on-surface">$1,284,592.40</h2>
+<span class="text-secondary text-sm font-medium">+2.4%</span>
+</div>
+<div class="mt-6 h-1 w-full bg-surface-container-highest rounded-full overflow-hidden">
+<div class="h-full bg-gradient-to-r from-primary to-primary-container w-[72%]"></div>
+</div>
+</div>
+<!-- Daily PnL -->
+<div class="bg-surface-container p-6 rounded-lg">
+<p class="text-label text-xs opacity-50 uppercase tracking-widest">Daily P&amp;L</p>
+<div class="mt-4 flex items-baseline gap-2">
+<h2 class="font-headline text-3xl font-bold text-secondary">+$14,205.12</h2>
+</div>
+<p class="mt-2 text-[10px] text-on-surface-variant">Last updated: 2 mins ago</p>
+</div>
+<!-- Margin Used -->
+<div class="bg-surface-container p-6 rounded-lg border-l-4 border-primary">
+<p class="text-label text-xs opacity-50 uppercase tracking-widest">Margin Used</p>
+<div class="mt-4">
+<h2 class="font-headline text-3xl font-bold text-on-surface">34.2%</h2>
+<p class="text-[10px] mt-2 opacity-50">$439,322 / $1.28M</p>
+</div>
+</div>
+<!-- Open Positions -->
+<div class="bg-surface-container p-6 rounded-lg">
+<p class="text-label text-xs opacity-50 uppercase tracking-widest">Open Positions</p>
+<div class="mt-4 flex items-center justify-between">
+<h2 class="font-headline text-3xl font-bold text-on-surface">12</h2>
+<div class="flex -space-x-2">
+<div class="w-8 h-8 rounded-full bg-surface-container-highest border-2 border-surface-container flex items-center justify-center text-[10px] font-bold">BTC</div>
+<div class="w-8 h-8 rounded-full bg-surface-container-highest border-2 border-surface-container flex items-center justify-center text-[10px] font-bold">ETH</div>
+<div class="w-8 h-8 rounded-full bg-surface-container-highest border-2 border-surface-container flex items-center justify-center text-[10px] font-bold">TSLA</div>
+</div>
+</div>
+</div>
+</div>
+<!-- Main Layout Grid -->
+<div class="grid grid-cols-12 gap-8">
+<!-- Chart Area (Bento Main) -->
+<div class="col-span-12 lg:col-span-8 space-y-8">
+<div class="bg-surface-container rounded-lg overflow-hidden flex flex-col h-[500px]">
+<div class="px-6 py-4 flex items-center justify-between bg-surface-container-high/30">
+<div class="flex items-center gap-4">
+<div class="flex items-center gap-2">
+<span class="font-bold font-headline">BTC / USDT</span>
+<span class="text-secondary text-xs">68,432.10</span>
+</div>
+<div class="h-4 w-[1px] bg-outline-variant/30"></div>
+<div class="flex gap-2">
+<button class="px-2 py-1 text-[10px] rounded bg-surface-container-highest text-primary">15m</button>
+<button class="px-2 py-1 text-[10px] rounded hover:bg-surface-container-highest transition-colors">1h</button>
+<button class="px-2 py-1 text-[10px] rounded hover:bg-surface-container-highest transition-colors">4h</button>
+<button class="px-2 py-1 text-[10px] rounded hover:bg-surface-container-highest transition-colors">1d</button>
+</div>
+</div>
+<div class="flex gap-2">
+<button class="p-1 hover:bg-surface-container-highest rounded transition-colors"><span class="material-symbols-outlined text-[18px]">add_chart</span></button>
+<button class="p-1 hover:bg-surface-container-highest rounded transition-colors"><span class="material-symbols-outlined text-[18px]">settings</span></button>
+<button class="p-1 hover:bg-surface-container-highest rounded transition-colors"><span class="material-symbols-outlined text-[18px]">fullscreen</span></button>
+</div>
+</div>
+<div class="flex-1 relative bg-surface-container-low/50 overflow-hidden">
+<!-- Mock Candlestick Chart Area -->
+<div class="absolute inset-0 p-8 flex items-end gap-1 opacity-80">
+<!-- Candle visualization -->
+<div class="flex-1 flex flex-col items-center justify-end h-full gap-1">
+<div class="w-[1px] h-full bg-outline-variant/20 absolute"></div>
+<div class="w-3 h-24 bg-secondary/40 rounded-sm relative z-10 border border-secondary/60"></div>
+<div class="w-3 h-32 bg-secondary/40 rounded-sm relative z-10 border border-secondary/60"></div>
+<div class="w-3 h-20 bg-tertiary-container/40 rounded-sm relative z-10 border border-tertiary-container/60"></div>
+<div class="w-3 h-40 bg-secondary/40 rounded-sm relative z-10 border border-secondary/60"></div>
+<div class="w-3 h-28 bg-tertiary-container/40 rounded-sm relative z-10 border border-tertiary-container/60"></div>
+<div class="w-3 h-48 bg-secondary/40 rounded-sm relative z-10 border border-secondary/60"></div>
+<div class="w-3 h-36 bg-tertiary-container/40 rounded-sm relative z-10 border border-tertiary-container/60"></div>
+<div class="w-3 h-52 bg-secondary/40 rounded-sm relative z-10 border border-secondary/60"></div>
+<div class="w-3 h-44 bg-secondary/40 rounded-sm relative z-10 border border-secondary/60"></div>
+</div>
+<!-- Background Image for Chart Grain/Atmosphere -->
+<img class="absolute inset-0 w-full h-full object-cover mix-blend-overlay opacity-20 pointer-events-none" data-alt="abstract dark trading chart visualization with glowing blue and green lines on a digital display" src="https://lh3.googleusercontent.com/aida-public/AB6AXuBg7zvikUGcCHKpN4cmnTfYaS1hDIHbdNGW7q-mK7hXjw2M6DNYWAHq4YFo7zQNhmc8FxbePnRG81SWrVtprK1GVVvOH11lGoWk-NzK9wW5mNNAdSfoaOD44OtFaAnDBq9W-FdtlAJPIU_OXZ-353l_4COc6wLJygS595waTQtXz6hk0MiJpwLOansFEBEEv5cncucuzviRoi-BLET6CFBOYzf69ZiGHRhya6cqFs0kXQcUivRo9Gf8EJzltTia64hAr7BgWFJc00I"/>
+</div>
+</div>
+</div>
+<!-- Recent Trades Table -->
+<div class="bg-surface-container rounded-lg overflow-hidden">
+<div class="px-6 py-4 border-b border-outline-variant/5">
+<h3 class="font-headline font-bold text-lg">Execution Logs</h3>
+</div>
+<div class="overflow-x-auto">
+<table class="w-full text-left border-collapse">
+<thead>
+<tr class="bg-surface-container-high/20 text-[10px] uppercase tracking-widest text-on-surface-variant">
+<th class="px-6 py-4 font-medium">Asset</th>
+<th class="px-6 py-4 font-medium">Type</th>
+<th class="px-6 py-4 font-medium">Size</th>
+<th class="px-6 py-4 font-medium">Price</th>
+<th class="px-6 py-4 font-medium">Time</th>
+<th class="px-6 py-4 font-medium text-right">Status</th>
+</tr>
+</thead>
+<tbody class="text-xs divide-y divide-outline-variant/5">
+<tr class="hover:bg-surface-bright transition-colors cursor-pointer group">
+<td class="px-6 py-4 font-medium">BTCUSDT</td>
+<td class="px-6 py-4 text-secondary">LONG</td>
+<td class="px-6 py-4 tabular-nums">0.2450</td>
+<td class="px-6 py-4 tabular-nums">68,230.40</td>
+<td class="px-6 py-4 opacity-50">14:23:45</td>
+<td class="px-6 py-4 text-right">
+<span class="bg-secondary/10 text-secondary px-2 py-0.5 rounded text-[10px] font-bold">FILLED</span>
+</td>
+</tr>
+<tr class="hover:bg-surface-bright transition-colors cursor-pointer group">
+<td class="px-6 py-4 font-medium">ETHUSDT</td>
+<td class="px-6 py-4 text-tertiary-container">SHORT</td>
+<td class="px-6 py-4 tabular-nums">1.5000</td>
+<td class="px-6 py-4 tabular-nums">3,450.12</td>
+<td class="px-6 py-4 opacity-50">14:18:12</td>
+<td class="px-6 py-4 text-right">
+<span class="bg-secondary/10 text-secondary px-2 py-0.5 rounded text-[10px] font-bold">FILLED</span>
+</td>
+</tr>
+<tr class="hover:bg-surface-bright transition-colors cursor-pointer group">
+<td class="px-6 py-4 font-medium">TSLA</td>
+<td class="px-6 py-4 text-secondary">LONG</td>
+<td class="px-6 py-4 tabular-nums">50.00</td>
+<td class="px-6 py-4 tabular-nums">242.45</td>
+<td class="px-6 py-4 opacity-50">13:55:04</td>
+<td class="px-6 py-4 text-right">
+<span class="bg-primary/10 text-primary px-2 py-0.5 rounded text-[10px] font-bold">PENDING</span>
+</td>
+</tr>
+</tbody>
+</table>
+</div>
+</div>
+</div>
+<!-- Market Overview & Signals (Side Bento) -->
+<div class="col-span-12 lg:col-span-4 space-y-8">
+<!-- Market Overview Widget -->
+<div class="bg-surface-container rounded-lg p-6 space-y-6">
+<div class="flex items-center justify-between">
+<h3 class="font-headline font-bold text-lg">Market Hub</h3>
+<button class="text-primary text-xs font-medium">View All</button>
+</div>
+<div class="space-y-4">
+<div class="flex items-center justify-between p-3 rounded-lg bg-surface-container-high/40 hover:bg-surface-container-high transition-colors cursor-pointer">
+<div class="flex items-center gap-3">
+<div class="w-8 h-8 rounded bg-[#F7931A] flex items-center justify-center font-bold text-xs">₿</div>
+<div>
+<p class="text-xs font-bold">Bitcoin</p>
+<p class="text-[10px] opacity-50">BTC/USDT</p>
+</div>
+</div>
+<div class="text-right">
+<p class="text-xs font-bold tabular-nums">68,432.1</p>
+<p class="text-[10px] text-secondary">+1.24%</p>
+</div>
+</div>
+<div class="flex items-center justify-between p-3 rounded-lg bg-surface-container-high/40 hover:bg-surface-container-high transition-colors cursor-pointer">
+<div class="flex items-center gap-3">
+<div class="w-8 h-8 rounded bg-[#627EEA] flex items-center justify-center font-bold text-xs">Ξ</div>
+<div>
+<p class="text-xs font-bold">Ethereum</p>
+<p class="text-[10px] opacity-50">ETH/USDT</p>
+</div>
+</div>
+<div class="text-right">
+<p class="text-xs font-bold tabular-nums">3,452.8</p>
+<p class="text-[10px] text-tertiary-container">-0.45%</p>
+</div>
+</div>
+<div class="flex items-center justify-between p-3 rounded-lg bg-surface-container-high/40 hover:bg-surface-container-high transition-colors cursor-pointer">
+<div class="flex items-center gap-3">
+<div class="w-8 h-8 rounded bg-[#26A17B] flex items-center justify-center font-bold text-xs">₮</div>
+<div>
+<p class="text-xs font-bold">Tether</p>
+<p class="text-[10px] opacity-50">USDT/USD</p>
+</div>
+</div>
+<div class="text-right">
+<p class="text-xs font-bold tabular-nums">1.0001</p>
+<p class="text-[10px] text-on-surface-variant">0.00%</p>
+</div>
+</div>
+</div>
+</div>
+<!-- Volatility Heatmap Card -->
+<div class="glass-panel rounded-lg p-6 overflow-hidden relative group cursor-pointer border border-outline-variant/5">
+<div class="relative z-10">
+<div class="flex items-center gap-2 mb-4">
+<span class="material-symbols-outlined text-primary" style="font-variation-settings: 'FILL' 1;">bolt</span>
+<h3 class="font-headline font-bold">Protrades Alpha Signals</h3>
+</div>
+<p class="text-xs text-on-surface-variant mb-6 leading-relaxed">Neural model detects high-probability breakout in the Tech Sector over next 4 hours.</p>
+<div class="grid grid-cols-4 gap-2">
+<div class="h-10 bg-secondary/80 rounded-sm"></div>
+<div class="h-10 bg-secondary/40 rounded-sm"></div>
+<div class="h-10 bg-surface-container-highest rounded-sm"></div>
+<div class="h-10 bg-tertiary-container/30 rounded-sm"></div>
+</div>
+<div class="mt-6">
+<button class="w-full py-3 bg-gradient-to-r from-primary to-primary-container text-on-primary-fixed text-xs font-bold rounded-md hover:shadow-lg hover:shadow-primary/20 transition-all active:scale-95">DEPLOY BOT</button>
+</div>
+</div>
+<div class="absolute inset-0 bg-gradient-to-tr from-primary/5 to-transparent opacity-0 group-hover:opacity-100 transition-opacity"></div>
+</div>
+<!-- News Widget -->
+<div class="bg-surface-container rounded-lg p-6">
+<h3 class="font-headline font-bold text-lg mb-4">Pulse Feed</h3>
+<div class="space-y-4">
+<div class="border-l-2 border-primary pl-4 py-1">
+<p class="text-[10px] text-primary font-bold uppercase mb-1">Breaking</p>
+<p class="text-xs font-medium line-clamp-2">Federal Reserve hints at potential rate maintenance through Q3.</p>
+<p class="text-[10px] opacity-40 mt-1">12:45 PM • Macro</p>
+</div>
+<div class="border-l-2 border-outline-variant/30 pl-4 py-1">
+<p class="text-xs font-medium line-clamp-2">NVDA reaches new ATH as data center demand surges.</p>
+<p class="text-[10px] opacity-40 mt-1">11:30 AM • Tech</p>
+</div>
+</div>
+</div>
+</div>
+</div>
+</div>
+</main>
+<!-- Contextual FAB (Only on Dashboard) -->
+<button class="fixed bottom-8 right-8 w-14 h-14 bg-gradient-to-br from-primary to-primary-container text-on-primary-fixed rounded-full shadow-2xl shadow-primary/40 flex items-center justify-center hover:scale-110 active:scale-95 transition-transform z-50">
+<span class="material-symbols-outlined font-bold">add</span>
+</button>
+</body></html>

@@ -1,0 +1,25 @@
+services:
+  api:
+    build:
+      context: ./backend
+    container_name: protrades-api
+    ports:
+      - "8000:8000"
+    env_file:
+      - .env
+    volumes:
+      - protrades_data:/app/data
+    environment:
+      DATABASE_URL: sqlite:////app/data/protrades.db
+
+  web:
+    build:
+      context: ./frontend
+    container_name: protrades-web
+    ports:
+      - "8080:80"
+    depends_on:
+      - api
+
+volumes:
+  protrades_data:

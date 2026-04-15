@@ -1,11 +1,14 @@
 from contextlib import asynccontextmanager
 
-from fastapi import FastAPI
+from fastapi import FastAPI, HTTPException
 from fastapi.middleware.cors import CORSMiddleware
+from fastapi.responses import FileResponse
+from fastapi.staticfiles import StaticFiles
 
 from config import get_settings
 from database import init_db
 from routes import auth, logs_api, orders, probot, settings_api, webhooks
+from pathlib import Path
 
 
 @asynccontextmanager
@@ -48,3 +51,31 @@ def webhook_urls():
         "chartink": f"{base}/webhook/chartink",
         "python": f"{base}/webhook/python",
     }
+
+
+_FRONTEND_DIST = (Path(__file__).resolve().parent / "frontend_dist").resolve()
+_FRONTEND_ASSETS = (_FRONTEND_DIST / "assets").resolve()
+if _FRONTEND_ASSETS.exists():
+    app.mount("/assets", StaticFiles(directory=str(_FRONTEND_ASSETS)), name="assets")
+
+
+@app.get("/{full_path:path}")
+def spa_fallback(full_path: str):
+    """
+    Single-service deploy: serve React SPA index.html for non-API routes.
+    This is only active when frontend build exists in backend/frontend_dist.
+    """
+    if not _FRONTEND_DIST.exists():
+        raise HTTPException(status_code=404, detail="not found")
+    if full_path.startswith("api") or full_path.startswith("webhook"):
+        raise HTTPException(status_code=404, detail="not found")
+
+    # Serve real files (favicon, manifest, etc.) when present
+    target = (_FRONTEND_DIST / full_path).resolve() if full_path else None
+    if target and str(target).startswith(str(_FRONTEND_DIST)) and target.is_file():
+        return FileResponse(str(target))
+
+    index = (_FRONTEND_DIST / "index.html").resolve()
+    if index.exists():
+        return FileResponse(str(index))
+    raise HTTPException(status_code=404, detail="not found")

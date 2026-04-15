@@ -1,0 +1,28 @@
+.git
+.github
+.vscode
+.idea
+
+# Local env/secrets
+.env
+.env.*
+!.env.example
+
+# Python
+**/__pycache__
+**/*.pyc
+**/.venv
+**/venv
+
+# Node
+**/node_modules
+**/dist
+
+# Local DB/logs
+**/*.db
+**/*.sqlite*
+**/*.log
+
+# Large vendored project not needed for this deploy
+openalgo-main
+

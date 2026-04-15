@@ -74,6 +74,21 @@ Notes:
 - The frontend uses `VITE_API_BASE_URL` to call the API across domains (required on Railway).
 - If you change domains, update `CORS_ORIGINS` on the API service.
 
+## Deploy on Railway (single service / single deploy)
+
+If you want **one Railway service** for both backend + frontend, this repo includes a **root `Dockerfile`** that:
+- builds the React app
+- serves it from FastAPI (same domain)
+
+Steps:
+- Create a Railway service from this GitHub repo (root)
+- Railway should auto-detect Docker and build the root `Dockerfile`
+- Set backend variables (same as API service), plus:
+  - `PUBLIC_APP_URL=https://<your-railway-domain>`
+  - `CORS_ORIGINS=https://<your-railway-domain>`
+
+In this mode, the frontend calls the API via same-origin `/api`.
+
 ## Webhook URLs
 
 Configure your DNS so `app.protrades.in` points to your host. Default branded paths:

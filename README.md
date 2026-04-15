@@ -89,6 +89,15 @@ Steps:
 
 In this mode, the frontend calls the API via same-origin `/api`.
 
+### Alternative (no Docker): `railway.json` + scripts
+
+If you prefer the script-based approach, this repo also includes:
+- `build.sh` (installs backend deps, builds frontend, copies it into `backend/frontend_dist/`)
+- `start.sh` (starts FastAPI on `$PORT`)
+- `railway.json` (wires the above commands)
+
+This requires Railway’s builder image to have **Node + npm** available for the frontend build.
+
 ## Webhook URLs
 
 Configure your DNS so `app.protrades.in` points to your host. Default branded paths:

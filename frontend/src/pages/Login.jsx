@@ -1,7 +1,7 @@
-import { useState } from "react";
+import { useEffect, useState } from "react";
 import { useNavigate } from "react-router-dom";
 import MsIcon from "../components/MsIcon.jsx";
-import { api, setToken } from "../api.js";
+import { api, getToken, setToken } from "../api.js";
 
 export default function Login() {
   const nav = useNavigate();
@@ -14,6 +14,24 @@ export default function Login() {
   const [guestLoading, setGuestLoading] = useState(false);
   const [ssoUrl, setSsoUrl] = useState("");
   const [ssoLoading, setSsoLoading] = useState(false);
+
+  useEffect(() => {
+    const t = getToken();
+    if (!t) return;
+    let cancelled = false;
+    api("/api/auth/status")
+      .then((s) => {
+        if (cancelled) return;
+        if (s?.connected) nav("/dashboard", { replace: true });
+        else setToken("");
+      })
+      .catch(() => {
+        if (!cancelled) setToken("");
+      });
+    return () => {
+      cancelled = true;
+    };
+  }, [nav]);
 
   const submit = async (e) => {
     e.preventDefault();
@@ -236,8 +254,8 @@ export default function Login() {
           </button>
 
           <p className="mt-8 text-center text-xs text-on-surface-variant">
-            Uses Rupeezy Vortex (<code className="text-[10px]">vortex-api.rupeezy.in</code>). Session JWT is stored locally
-            until expiry. Guest mode uses sample data only.
+            Uses Rupeezy Vortex (<code className="text-[10px]">vortex-api.rupeezy.in</code>). Your login token is saved in this
+            browser (<code className="text-[10px]">localStorage</code>) until it expires. Guest mode uses sample data only.
           </p>
         </div>
 

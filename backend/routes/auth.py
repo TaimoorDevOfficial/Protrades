@@ -33,12 +33,30 @@ def _jwt_expires_delta(settings: Settings, broker_expires_at: datetime | None) -
     return delta if delta <= cap else cap
 
 
+def _jwt_expires_for_login(settings: Settings, broker_expires_at: datetime | None, remember_me: bool) -> timedelta:
+    """JWT lifetime: longer when remember_me; never past broker session or 60 days."""
+    cap_abs = timedelta(days=60)
+    preferred = (timedelta(days=30) if remember_me else timedelta(minutes=settings.access_token_expire_minutes))
+    preferred = min(preferred, cap_abs)
+    if not broker_expires_at:
+        return preferred
+    now = datetime.now(timezone.utc)
+    exp = broker_expires_at
+    if exp.tzinfo is None:
+        exp = exp.replace(tzinfo=timezone.utc)
+    broker_remaining = exp - now
+    if broker_remaining.total_seconds() < 300:
+        return min(preferred, timedelta(minutes=settings.access_token_expire_minutes))
+    return min(preferred, broker_remaining, cap_abs)
+
+
 class LoginBody(BaseModel):
-    """Rupeezy Vortex retail login: application id + x-api-key + client credentials + TOTP."""
+    """Rupeezy Vortex retail login: client credentials + TOTP (app id / x-api-key from server .env)."""
 
     client_code: str = ""
     password: str = ""
     totp: str = ""
+    remember_me: bool = True
 
 
 def _extract_vortex_auth_from_callback(raw: str) -> str:
@@ -72,6 +90,7 @@ class RupeezySsoBody(BaseModel):
 
     auth_code: str = ""
     callback_url: str = ""
+    remember_me: bool = True
 
     @model_validator(mode="after")
     def _resolve_auth(self):
@@ -176,7 +195,7 @@ async def login(body: LoginBody, db: Session = Depends(get_db)):
     jwt = create_access_token(
         settings,
         {"sid": row.id, "sub": "protrades"},
-        expires_delta=_jwt_expires_delta(settings, expires_at),
+        expires_delta=_jwt_expires_for_login(settings, expires_at, body.remember_me),
     )
     from services.settings_store import set_setting
 
@@ -365,7 +384,7 @@ async def rupeezzy_exchange_sso(body: RupeezySsoBody, db: Session = Depends(get_
     jwt = create_access_token(
         settings,
         {"sid": row.id, "sub": "protrades"},
-        expires_delta=_jwt_expires_delta(settings, expires_at),
+        expires_delta=_jwt_expires_for_login(settings, expires_at, body.remember_me),
     )
     return {
         "access_token": jwt,

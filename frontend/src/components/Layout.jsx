@@ -5,15 +5,10 @@ import ProBot from "./ProBot.jsx";
 import { api } from "../api";
 
 const nav = [
-  { to: "/dashboard", label: "Dashboard", icon: "dashboard" },
+  { to: "/intel", label: "Intel", icon: "auto_awesome" },
   { to: "/market", label: "Market", icon: "candlestick_chart" },
-  { to: "/strategies", label: "Strategy", icon: "precision_manufacturing" },
-  { to: "/webhooks", label: "Automation", icon: "webhook" },
-  { to: "/portfolio", label: "Portfolio", icon: "account_balance_wallet" },
   { to: "/watchlist", label: "Watchlist", icon: "visibility" },
   { to: "/holdings", label: "Holdings", icon: "stacked_line_chart" },
-  { to: "/orders", label: "Orders", icon: "receipt_long" },
-  { to: "/logs", label: "Logs", icon: "article" },
   { to: "/settings", label: "Settings", icon: "settings" },
 ];
 

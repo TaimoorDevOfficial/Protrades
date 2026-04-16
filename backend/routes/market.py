@@ -23,8 +23,7 @@ def _parse_holdings(raw: str) -> list[dict[str, Any]]:
         return []
 
 
-@router.get("/brief")
-async def market_brief(session=Depends(require_session), db: Session = Depends(get_db)):
+async def build_market_brief_payload(session) -> dict[str, Any]:
     """
     No-chatbot market brief for holdings:
     - live LTP from Vortex quotes
@@ -110,4 +109,9 @@ async def market_brief(session=Depends(require_session), db: Session = Depends(g
         "holdings": out,
         "corporate_actions": ca_filtered[:200],
     }
+
+
+@router.get("/brief")
+async def market_brief(session=Depends(require_session), db: Session = Depends(get_db)):
+    return await build_market_brief_payload(session)
 

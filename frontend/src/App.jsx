@@ -10,6 +10,7 @@ import Logs from "./pages/Logs.jsx";
 import SettingsPage from "./pages/Settings.jsx";
 import Portfolio from "./pages/Portfolio.jsx";
 import Watchlist from "./pages/Watchlist.jsx";
+import MarketBrief from "./pages/Market.jsx";
 import { getToken } from "./api.js";
 
 function PrivateLayout() {
@@ -28,6 +29,7 @@ export default function App() {
       <Route element={<PrivateLayout />}>
         <Route path="/" element={<Navigate to="/dashboard" replace />} />
         <Route path="/dashboard" element={<Dashboard />} />
+        <Route path="/market" element={<MarketBrief />} />
         <Route path="/portfolio" element={<Portfolio />} />
         <Route path="/watchlist" element={<Watchlist />} />
         <Route path="/webhooks" element={<Webhooks />} />

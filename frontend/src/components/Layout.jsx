@@ -6,6 +6,7 @@ import { api } from "../api";
 
 const nav = [
   { to: "/dashboard", label: "Dashboard", icon: "dashboard" },
+  { to: "/market", label: "Market", icon: "candlestick_chart" },
   { to: "/strategies", label: "Strategy", icon: "precision_manufacturing" },
   { to: "/webhooks", label: "Automation", icon: "webhook" },
   { to: "/portfolio", label: "Portfolio", icon: "account_balance_wallet" },

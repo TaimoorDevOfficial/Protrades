@@ -1,5 +1,5 @@
 import hashlib
-from datetime import datetime, timedelta, timezone
+from datetime import date, datetime, timedelta, timezone
 from typing import Any
 
 import httpx
@@ -193,6 +193,102 @@ class RupeezzyClient:
                     if v is not None:
                         return float(v)
         return None
+
+    async def quotes_ltp(self, access_token: str, instruments: list[str]) -> dict[str, float]:
+        """
+        Fetch LTP for up to ~1000 instruments in one call.
+        instruments items must be like "NSE_EQ-2885".
+        Returns map instrument->ltp.
+        """
+        if self.settings.rupeezzy_mock:
+            return {inst: 100.0 for inst in instruments}
+        if not instruments:
+            return {}
+        async with httpx.AsyncClient(timeout=30.0) as client:
+            r = await client.get(
+                f"{self.base}/data/quotes",
+                headers=self._auth_headers(access_token),
+                params=[("q", inst) for inst in instruments] + [("mode", "ltp")],
+            )
+            r.raise_for_status()
+            data = r.json()
+        out: dict[str, float] = {}
+        if isinstance(data, dict):
+            q = data.get("data") or data
+            if isinstance(q, dict):
+                for inst, row in q.items():
+                    if isinstance(row, dict):
+                        v = row.get("ltp") or row.get("last_price")
+                        if v is not None:
+                            try:
+                                out[str(inst)] = float(v)
+                            except (TypeError, ValueError):
+                                pass
+        return out
+
+    async def day_open_price(self, access_token: str, exchange: str, token_id: int, day: date | None = None) -> float | None:
+        """
+        Fetch today's open price using Vortex historical candles endpoint.
+        We request 1D candle from start-of-day to now and take the first candle open.
+        """
+        if self.settings.rupeezzy_mock:
+            return 95.0
+        d = day or datetime.now(timezone.utc).date()
+        # Vortex expects epoch seconds for from/to. Use UTC boundaries; for NSE this is close enough for daily candle open.
+        start = datetime(d.year, d.month, d.day, 0, 0, 0, tzinfo=timezone.utc)
+        end = datetime.now(timezone.utc) + timedelta(minutes=5)
+        params = {
+            "exchange": exchange,
+            "token": token_id,
+            "from": int(start.timestamp()),
+            "to": int(end.timestamp()),
+            "resolution": "1D",
+        }
+        async with httpx.AsyncClient(timeout=30.0) as client:
+            r = await client.get(f"{self.base}/data/history", headers=self._auth_headers(access_token), params=params)
+            r.raise_for_status()
+            data = r.json()
+        # Common shapes: {"status":"success","data":{"candles":[[ts,o,h,l,c,v],...]}}
+        if isinstance(data, dict):
+            inner = data.get("data") if isinstance(data.get("data"), dict) else data
+            candles = None
+            if isinstance(inner, dict):
+                candles = inner.get("candles") or inner.get("CANDLES")
+            if isinstance(candles, list) and candles:
+                first = candles[0]
+                if isinstance(first, (list, tuple)) and len(first) >= 2:
+                    try:
+                        return float(first[1])
+                    except (TypeError, ValueError):
+                        return None
+        return None
+
+
+async def nse_corporate_actions() -> list[dict[str, Any]]:
+    """
+    Pull corporate actions from NSE public endpoint.
+    Note: NSE may rate-limit; we keep this best-effort and non-fatal.
+    """
+    url = "https://www.nseindia.com/api/corporates-corporateActions?index=equities"
+    headers = {
+        "User-Agent": "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/122 Safari/537.36",
+        "Accept": "application/json,text/plain,*/*",
+        "Referer": "https://www.nseindia.com/",
+    }
+    async with httpx.AsyncClient(timeout=30.0, headers=headers, follow_redirects=True) as client:
+        try:
+            # NSE often needs a homepage hit first for cookies
+            await client.get("https://www.nseindia.com/")
+            r = await client.get(url)
+            r.raise_for_status()
+            data = r.json()
+            if isinstance(data, dict) and isinstance(data.get("data"), list):
+                return [x for x in data["data"] if isinstance(x, dict)]
+            if isinstance(data, list):
+                return [x for x in data if isinstance(x, dict)]
+        except Exception:
+            return []
+    return []
 
     async def holdings(self, access_token: str) -> Any:
         raw = await self._get("/trading/portfolio/holdings", access_token)

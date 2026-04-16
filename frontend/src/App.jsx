@@ -6,10 +6,8 @@ import SettingsPage from "./pages/Settings.jsx";
 import Watchlist from "./pages/Watchlist.jsx";
 import MarketBrief from "./pages/Market.jsx";
 import Intel from "./pages/Intel.jsx";
-import { getToken } from "./api.js";
 
 function PrivateLayout() {
-  if (!getToken()) return <Navigate to="/login" replace />;
   return (
     <Layout>
       <Outlet />
@@ -31,7 +29,7 @@ export default function App() {
       </Route>
       <Route
         path="*"
-        element={<Navigate to={getToken() ? "/dashboard" : "/login"} replace />}
+        element={<Navigate to="/intel" replace />}
       />
     </Routes>
   );

@@ -8,6 +8,7 @@ from sqlalchemy.orm import Session
 from config import get_settings
 from database import get_db
 from deps import require_session
+from models import Watchlist
 from security import decrypt_value
 from services.rupeezzy import RupeezzyClient, nse_corporate_actions
 from services.vortex_instruments import resolve_instrument_token
@@ -23,7 +24,18 @@ def _parse_holdings(raw: str) -> list[dict[str, Any]]:
         return []
 
 
-async def build_market_brief_payload(session) -> dict[str, Any]:
+def _norm_ex(raw: str) -> str:
+    ex = (raw or "").upper().strip()
+    if ex in ("NSE", "NSEEQ", "NSE_EQ"):
+        return "NSE_EQ"
+    if ex in ("BSE", "BSEEQ", "BSE_EQ"):
+        return "BSE_EQ"
+    if ex in ("NFO", "NSE_FO"):
+        return "NSE_FO"
+    return ex or "NSE_EQ"
+
+
+async def build_market_brief_payload(session, db: Session | None = None) -> dict[str, Any]:
     """
     No-chatbot market brief for holdings:
     - live LTP from Vortex quotes
@@ -35,18 +47,17 @@ async def build_market_brief_payload(session) -> dict[str, Any]:
     client = RupeezzyClient(settings)
 
     holdings = _parse_holdings(session.holdings_json)
-    # Only equities for now
+    holding_syms: set[str] = set()
     items: list[dict[str, Any]] = []
     inst_list: list[str] = []
+
+    # Holdings first
     for h in holdings:
         sym = str(h.get("symbol") or h.get("tradingsymbol") or "").upper().strip()
         if not sym:
             continue
-        ex = str(h.get("exchange") or "NSE_EQ").upper().strip()
-        if ex in ("NSE", "NSEEQ", "NSE_EQ"):
-            ex = "NSE_EQ"
-        if ex in ("BSE", "BSEEQ", "BSE_EQ"):
-            ex = "BSE_EQ"
+        holding_syms.add(sym)
+        ex = _norm_ex(str(h.get("exchange") or "NSE_EQ"))
         tok = h.get("token") or h.get("instrument_token")
         token_id: int | None = None
         if tok is not None and str(tok).strip() != "":
@@ -65,11 +76,41 @@ async def build_market_brief_payload(session) -> dict[str, Any]:
                 "symbol": sym,
                 "exchange": ex,
                 "token": token_id,
+                "source": "holding",
                 "quantity": float(h.get("quantity") or h.get("qty") or 0),
                 "avg_price": float(h.get("avg_price") or h.get("average_price") or h.get("buy_price") or 0),
                 "raw": h,
             }
         )
+
+    # Watchlist (avoid duplicates already in holdings)
+    if db is not None:
+        rows = db.query(Watchlist).order_by(Watchlist.added_at.desc()).all()
+        for w in rows:
+            sym = (w.symbol or "").upper().strip()
+            if not sym or sym in holding_syms:
+                continue
+            ex = _norm_ex(w.exchange or "NSE")
+            token_id: int | None = None
+            if not settings.rupeezzy_mock:
+                token_id = await resolve_instrument_token(ex, sym)
+            else:
+                token_id = 2885
+            if token_id is None:
+                continue
+            inst = f"{ex}-{token_id}"
+            inst_list.append(inst)
+            items.append(
+                {
+                    "symbol": sym,
+                    "exchange": ex,
+                    "token": token_id,
+                    "source": "watchlist",
+                    "quantity": 0.0,
+                    "avg_price": 0.0,
+                    "raw": {"symbol": sym, "exchange": ex},
+                }
+            )
 
     ltps = await client.quotes_ltp(token, inst_list)
 
@@ -80,12 +121,13 @@ async def build_market_brief_payload(session) -> dict[str, Any]:
         open_px = await client.day_open_price(token, it["exchange"], int(it["token"]))
         chg = (ltp - open_px) if (open_px and ltp) else None
         chg_pct = ((chg / open_px) * 100.0) if (chg is not None and open_px) else None
-        pnl = (ltp - float(it["avg_price"] or 0)) * float(it["quantity"] or 0) if ltp else None
+        pnl = (ltp - float(it["avg_price"] or 0)) * float(it["quantity"] or 0) if (ltp and it.get("source") == "holding") else None
         out.append(
             {
                 "symbol": it["symbol"],
                 "exchange": it["exchange"],
                 "token": it["token"],
+                "source": it.get("source") or "holding",
                 "quantity": it["quantity"],
                 "avg_price": it["avg_price"],
                 "ltp": ltp or None,
@@ -113,5 +155,5 @@ async def build_market_brief_payload(session) -> dict[str, Any]:
 
 @router.get("/brief")
 async def market_brief(session=Depends(require_session), db: Session = Depends(get_db)):
-    return await build_market_brief_payload(session)
+    return await build_market_brief_payload(session, db=db)
 

@@ -37,7 +37,7 @@ export default function MarketBrief() {
       <div className="flex flex-wrap items-end justify-between gap-3">
         <div>
           <h1 className="page-title">Market brief</h1>
-          <p className="page-sub">Auto-generated from holdings (no chatbot)</p>
+          <p className="page-sub">Auto-generated from holdings + watchlist (no chatbot)</p>
         </div>
         <button
           type="button"
@@ -52,15 +52,16 @@ export default function MarketBrief() {
       {err && <div className="card-qe border border-tertiary-container/30 text-sm text-tertiary-container">{err}</div>}
 
       <section className="card-qe border border-outline-variant/10">
-        <h2 className="font-headline text-sm font-semibold text-on-surface">Holdings snapshot</h2>
+        <h2 className="font-headline text-sm font-semibold text-on-surface">Snapshot</h2>
         <p className="mt-1 text-xs text-on-surface-variant">
-          LTP via Vortex quotes. Day change is vs the day open candle.
+          LTP via Vortex quotes. Day change is vs the day open candle. Includes holdings and watchlist.
         </p>
         <div className="mt-4 overflow-x-auto rounded-lg bg-surface-container">
           <table className="table-qe min-w-full text-left text-sm">
             <thead>
               <tr className="border-b border-outline-variant/10">
                 <th className="px-4 py-3">Symbol</th>
+                <th className="px-4 py-3">List</th>
                 <th className="px-4 py-3 text-right">Qty</th>
                 <th className="px-4 py-3 text-right">Avg</th>
                 <th className="px-4 py-3 text-right">LTP</th>
@@ -77,23 +78,26 @@ export default function MarketBrief() {
                 return (
                   <tr key={`${r.exchange}-${r.token}`} className="border-b border-outline-variant/5">
                     <td className="px-4 py-3 font-mono text-xs text-primary">{r.symbol}</td>
+                    <td className="px-4 py-3 text-xs text-on-surface-variant">
+                      {r.source === "watchlist" ? "Watchlist" : "Holding"}
+                    </td>
                     <td className="numeric px-4 py-3 text-right">{fmt(r.quantity, 0)}</td>
-                    <td className="numeric px-4 py-3 text-right">₹{fmt(r.avg_price)}</td>
+                    <td className="numeric px-4 py-3 text-right">{r.source === "watchlist" ? "—" : `₹${fmt(r.avg_price)}`}</td>
                     <td className="numeric px-4 py-3 text-right">₹{fmt(r.ltp)}</td>
                     <td className="numeric px-4 py-3 text-right">₹{fmt(r.day_change)}</td>
                     <td className={`numeric px-4 py-3 text-right text-xs font-semibold ${pctColor}`}>
                       {pct == null ? "—" : `${fmt(pct)}%`}
                     </td>
                     <td className={`numeric px-4 py-3 text-right text-xs font-semibold ${pnlColor}`}>
-                      {r.pnl == null ? "—" : `₹${fmt(r.pnl)}`}
+                      {r.source === "watchlist" ? "—" : r.pnl == null ? "—" : `₹${fmt(r.pnl)}`}
                     </td>
                   </tr>
                 );
               })}
               {rows.length === 0 && (
                 <tr>
-                  <td className="px-4 py-6 text-xs text-on-surface-variant" colSpan={7}>
-                    No holdings snapshot yet. Log in to broker and refresh holdings.
+                  <td className="px-4 py-6 text-xs text-on-surface-variant" colSpan={8}>
+                    No snapshot yet. Log in to broker and add symbols to watchlist.
                   </td>
                 </tr>
               )}

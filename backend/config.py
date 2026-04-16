@@ -12,6 +12,7 @@ class Settings(BaseSettings):
     rupeezzy_mock: bool = False
     vortex_application_id: str = ""
     vortex_x_api_key: str = ""
+    public_mode: bool = False
     claude_key: str = ""
     claude_model: str = "claude-sonnet-4-20250514"
     jwt_algorithm: str = "HS256"

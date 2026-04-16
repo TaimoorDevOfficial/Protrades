@@ -263,33 +263,6 @@ class RupeezzyClient:
                         return None
         return None
 
-
-async def nse_corporate_actions() -> list[dict[str, Any]]:
-    """
-    Pull corporate actions from NSE public endpoint.
-    Note: NSE may rate-limit; we keep this best-effort and non-fatal.
-    """
-    url = "https://www.nseindia.com/api/corporates-corporateActions?index=equities"
-    headers = {
-        "User-Agent": "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/122 Safari/537.36",
-        "Accept": "application/json,text/plain,*/*",
-        "Referer": "https://www.nseindia.com/",
-    }
-    async with httpx.AsyncClient(timeout=30.0, headers=headers, follow_redirects=True) as client:
-        try:
-            # NSE often needs a homepage hit first for cookies
-            await client.get("https://www.nseindia.com/")
-            r = await client.get(url)
-            r.raise_for_status()
-            data = r.json()
-            if isinstance(data, dict) and isinstance(data.get("data"), list):
-                return [x for x in data["data"] if isinstance(x, dict)]
-            if isinstance(data, list):
-                return [x for x in data if isinstance(x, dict)]
-        except Exception:
-            return []
-    return []
-
     async def holdings(self, access_token: str) -> Any:
         raw = await self._get("/trading/portfolio/holdings", access_token)
         return _unwrap_list(raw, "holdings")
@@ -444,6 +417,33 @@ async def nse_corporate_actions() -> list[dict[str, Any]]:
         if path.startswith("/funds") or path.endswith("/funds"):
             return {"available": 250000.0, "utilized": 50000.0, "collateral": 0.0}
         return {}
+
+
+async def nse_corporate_actions() -> list[dict[str, Any]]:
+    """
+    Pull corporate actions from NSE public endpoint.
+    Note: NSE may rate-limit; we keep this best-effort and non-fatal.
+    """
+    url = "https://www.nseindia.com/api/corporates-corporateActions?index=equities"
+    headers = {
+        "User-Agent": "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/122 Safari/537.36",
+        "Accept": "application/json,text/plain,*/*",
+        "Referer": "https://www.nseindia.com/",
+    }
+    async with httpx.AsyncClient(timeout=30.0, headers=headers, follow_redirects=True) as client:
+        try:
+            # NSE often needs a homepage hit first for cookies
+            await client.get("https://www.nseindia.com/")
+            r = await client.get(url)
+            r.raise_for_status()
+            data = r.json()
+            if isinstance(data, dict) and isinstance(data.get("data"), list):
+                return [x for x in data["data"] if isinstance(x, dict)]
+            if isinstance(data, list):
+                return [x for x in data if isinstance(x, dict)]
+        except Exception:
+            return []
+    return []
 
 
 def compute_expiry(login_response: dict[str, Any]) -> datetime | None:

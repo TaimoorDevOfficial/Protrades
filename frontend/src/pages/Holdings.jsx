@@ -5,9 +5,24 @@ export default function Holdings() {
   const [rows, setRows] = useState([]);
 
   useEffect(() => {
-    api("/api/data/holdings")
-      .then((d) => setRows(d.holdings || []))
-      .catch(() => setRows([]));
+    let cancelled = false;
+    (async () => {
+      try {
+        await api("/api/auth/refresh", { method: "POST" });
+      } catch {
+        /* still show last synced rows */
+      }
+      if (cancelled) return;
+      try {
+        const d = await api("/api/data/holdings");
+        if (!cancelled) setRows(d.holdings || []);
+      } catch {
+        if (!cancelled) setRows([]);
+      }
+    })();
+    return () => {
+      cancelled = true;
+    };
   }, []);
 
   return (

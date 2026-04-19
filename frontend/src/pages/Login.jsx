@@ -22,7 +22,7 @@ export default function Login() {
     api("/api/auth/status")
       .then((s) => {
         if (cancelled) return;
-        if (s?.connected) nav("/dashboard", { replace: true });
+        if (s?.connected) nav("/intel", { replace: true });
         else setToken("");
       })
       .catch(() => {
@@ -51,7 +51,14 @@ export default function Login() {
         setErr("Login succeeded but no access token was returned.");
         return;
       }
-      nav("/dashboard", { replace: true });
+      if (res?.portfolio_sync_error) {
+        try {
+          await api("/api/auth/refresh", { method: "POST" });
+        } catch {
+          /* holdings page also triggers refresh on load */
+        }
+      }
+      nav("/intel", { replace: true });
     } catch (e2) {
       setErr(e2.message || "Login failed");
     } finally {
@@ -95,8 +102,15 @@ export default function Login() {
         setErr("SSO succeeded but no access token was returned — check server logs.");
         return;
       }
+      if (res?.portfolio_sync_error) {
+        try {
+          await api("/api/auth/refresh", { method: "POST" });
+        } catch {
+          /* holdings page also triggers refresh on load */
+        }
+      }
       setSsoUrl("");
-      nav("/dashboard", { replace: true });
+      nav("/intel", { replace: true });
     } catch (e2) {
       setErr(e2.message || "SSO login failed");
     } finally {
@@ -114,7 +128,7 @@ export default function Login() {
         setErr("Guest session started but no access token was returned.");
         return;
       }
-      nav("/dashboard", { replace: true });
+      nav("/intel", { replace: true });
     } catch (e2) {
       setErr(e2.message || "Guest login failed");
     } finally {

@@ -13,7 +13,18 @@ router = APIRouter(prefix="/data", tags=["data"])
 def _parse_list(raw: str) -> list:
     try:
         v = json.loads(raw or "[]")
-        return v if isinstance(v, list) else []
+        if isinstance(v, list):
+            return v
+        if isinstance(v, dict):
+            for k in ("holdings", "positions", "orders", "data", "rows"):
+                inner = v.get(k)
+                if isinstance(inner, list):
+                    return inner
+                if k == "data" and isinstance(inner, dict):
+                    for kk in ("holdings", "positions", "orders", "trades"):
+                        if isinstance(inner.get(kk), list):
+                            return inner[kk]
+        return []
     except json.JSONDecodeError:
         return []
 

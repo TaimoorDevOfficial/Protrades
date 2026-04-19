@@ -1,20 +1,47 @@
 import json
+import logging
 from datetime import datetime, timedelta, timezone
 from urllib.parse import parse_qs, urlparse
 
 import httpx
 from fastapi import APIRouter, Depends, HTTPException, Query
+from fastapi.security import HTTPAuthorizationCredentials
 from pydantic import BaseModel, model_validator
 from sqlalchemy.orm import Session
 
 from config import Settings, get_settings
 from database import get_db
-from deps import get_broker_session, require_session
+from deps import get_broker_session, require_session, security
 from models import BrokerSession
-from security import create_access_token, decrypt_value, encrypt_value
+from security import create_access_token, decrypt_value, encrypt_value, safe_decode_token
 from services.rupeezzy import RupeezzyClient, compute_expiry, extract_access_token
 
 router = APIRouter(prefix="/auth", tags=["auth"])
+logger = logging.getLogger(__name__)
+
+
+async def _sync_portfolio_for_token(
+    client: RupeezzyClient,
+    token: str,
+    row: BrokerSession,
+) -> str | None:
+    """Fetch and persist holdings/positions/orders/funds. Returns error message on failure."""
+    from services.rupeezzy import normalize_to_list
+
+    try:
+        holdings = normalize_to_list(await client.holdings(token), "holdings")
+        positions = normalize_to_list(await client.positions(token), "positions")
+        orders = normalize_to_list(await client.orders(token), "orders")
+        funds = await client.funds(token)
+        row.holdings_json = json.dumps(holdings)
+        row.positions_json = json.dumps(positions)
+        row.orders_json = json.dumps(orders)
+        row.funds_json = json.dumps(funds if isinstance(funds, dict) else {"data": funds})
+        row.updated_at = datetime.now(timezone.utc)
+        return None
+    except Exception as e:
+        logger.exception("Broker portfolio sync failed")
+        return str(e)
 
 
 def _jwt_expires_delta(settings: Settings, broker_expires_at: datetime | None) -> timedelta:
@@ -178,19 +205,8 @@ async def login(body: LoginBody, db: Session = Depends(get_db)):
     db.commit()
     db.refresh(row)
 
-    try:
-        holdings = await client.holdings(token)
-        positions = await client.positions(token)
-        orders = await client.orders(token)
-        funds = await client.funds(token)
-        row.holdings_json = json.dumps(holdings if isinstance(holdings, list) else holdings)
-        row.positions_json = json.dumps(positions if isinstance(positions, list) else positions)
-        row.orders_json = json.dumps(orders if isinstance(orders, list) else orders)
-        row.funds_json = json.dumps(funds if isinstance(funds, dict) else {"data": funds})
-        row.updated_at = datetime.now(timezone.utc)
-        db.commit()
-    except Exception:
-        db.rollback()
+    portfolio_sync_error = await _sync_portfolio_for_token(client, token, row)
+    db.commit()
 
     jwt = create_access_token(
         settings,
@@ -203,12 +219,15 @@ async def login(body: LoginBody, db: Session = Depends(get_db)):
     set_setting(db, "rupeezzy_api_key", app_id, encrypt=True)
     set_setting(db, "rupeezzy_api_secret", xkey, encrypt=True)
 
-    return {
+    out = {
         "access_token": jwt,
         "token_type": "bearer",
         "expires_at": expires_at.isoformat() if expires_at else None,
         "broker": "rupeezzy",
     }
+    if portfolio_sync_error:
+        out["portfolio_sync_error"] = portfolio_sync_error
+    return out
 
 
 @router.post("/guest")
@@ -255,22 +274,13 @@ async def relogin(db: Session = Depends(get_db)):
     tok = decrypt_value(settings, row.rupeezzy_token)
     if not tok:
         raise HTTPException(status_code=401, detail="Broker token missing — log in again with a fresh TOTP")
-    try:
-        holdings = await client.holdings(tok)
-        positions = await client.positions(tok)
-        orders = await client.orders(tok)
-        funds = await client.funds(tok)
-        row.holdings_json = json.dumps(holdings if isinstance(holdings, list) else holdings)
-        row.positions_json = json.dumps(positions if isinstance(positions, list) else positions)
-        row.orders_json = json.dumps(orders if isinstance(orders, list) else orders)
-        row.funds_json = json.dumps(funds if isinstance(funds, dict) else {"data": funds})
-        row.updated_at = datetime.now(timezone.utc)
-        db.commit()
-    except Exception as e:
+    sync_err = await _sync_portfolio_for_token(client, tok, row)
+    if sync_err:
         raise HTTPException(
             status_code=401,
-            detail=f"Vortex session invalid or expired — log in again: {e!s}",
-        ) from e
+            detail=f"Vortex session invalid or expired — log in again: {sync_err}",
+        )
+    db.commit()
     return {"status": "ok", "updated_at": row.updated_at.isoformat() if row.updated_at else None}
 
 
@@ -290,19 +300,10 @@ async def refresh_session(session: BrokerSession = Depends(require_session), db:
 
     client = RupeezzyClient(settings)
     token = decrypt_value(settings, session.rupeezzy_token)
-    try:
-        holdings = await client.holdings(token)
-        positions = await client.positions(token)
-        orders = await client.orders(token)
-        funds = await client.funds(token)
-        session.holdings_json = json.dumps(holdings if isinstance(holdings, list) else holdings)
-        session.positions_json = json.dumps(positions if isinstance(positions, list) else positions)
-        session.orders_json = json.dumps(orders if isinstance(orders, list) else orders)
-        session.funds_json = json.dumps(funds if isinstance(funds, dict) else {"data": funds})
-        session.updated_at = datetime.now(timezone.utc)
-        db.commit()
-    except Exception as e:
-        raise HTTPException(status_code=502, detail=f"Refresh failed: {e!s}") from e
+    sync_err = await _sync_portfolio_for_token(client, token, session)
+    if sync_err:
+        raise HTTPException(status_code=502, detail=f"Refresh failed: {sync_err}") from None
+    db.commit()
     return {"status": "ok", "updated_at": session.updated_at.isoformat()}
 
 
@@ -367,37 +368,54 @@ async def rupeezzy_exchange_sso(body: RupeezySsoBody, db: Session = Depends(get_
     db.add(row)
     db.commit()
     db.refresh(row)
-    try:
-        holdings = await client.holdings(token)
-        positions = await client.positions(token)
-        orders = await client.orders(token)
-        funds = await client.funds(token)
-        row.holdings_json = json.dumps(holdings if isinstance(holdings, list) else holdings)
-        row.positions_json = json.dumps(positions if isinstance(positions, list) else positions)
-        row.orders_json = json.dumps(orders if isinstance(orders, list) else orders)
-        row.funds_json = json.dumps(funds if isinstance(funds, dict) else {"data": funds})
-        row.updated_at = datetime.now(timezone.utc)
-        db.commit()
-    except Exception:
-        db.rollback()
+    portfolio_sync_error = await _sync_portfolio_for_token(client, token, row)
+    db.commit()
 
     jwt = create_access_token(
         settings,
         {"sid": row.id, "sub": "protrades"},
         expires_delta=_jwt_expires_for_login(settings, expires_at, body.remember_me),
     )
-    return {
+    out = {
         "access_token": jwt,
         "token_type": "bearer",
         "expires_at": expires_at.isoformat() if expires_at else None,
         "broker": "rupeezzy",
     }
+    if portfolio_sync_error:
+        out["portfolio_sync_error"] = portfolio_sync_error
+    return out
 
 
 @router.get("/status")
-async def auth_status(session: BrokerSession | None = Depends(get_broker_session)):
+async def auth_status(
+    session: BrokerSession | None = Depends(get_broker_session),
+    creds: HTTPAuthorizationCredentials | None = Depends(security),
+):
+    settings = get_settings()
+    jwt_expires_at: datetime | None = None
+    is_guest_claim = False
+    if creds and creds.credentials:
+        payload = safe_decode_token(settings, creds.credentials)
+        if payload:
+            is_guest_claim = bool(payload.get("guest"))
+            exp = payload.get("exp")
+            if exp is not None:
+                jwt_expires_at = datetime.fromtimestamp(float(exp), tz=timezone.utc)
+
     return {
         "connected": session is not None,
         "broker": ("guest" if session and session.label == "guest" else "rupeezzy") if session else None,
+        "is_guest": bool(session and session.label == "guest"),
+        "is_guest_token": is_guest_claim,
         "expires_at": session.expires_at.isoformat() if session and session.expires_at else None,
+        "jwt_expires_at": jwt_expires_at.isoformat() if jwt_expires_at else None,
+        "demo_mode": settings.rupeezzy_mock,
     }
+
+
+@router.post("/logout")
+def logout(session: BrokerSession = Depends(require_session), db: Session = Depends(get_db)):
+    db.delete(session)
+    db.commit()
+    return {"status": "ok"}

@@ -7,6 +7,13 @@ import httpx
 from config import Settings
 
 
+def normalize_to_list(resp: Any, prefer: str = "holdings") -> list:
+    """Ensure portfolio slices are stored as JSON arrays (never raw wrapper dicts)."""
+    if isinstance(resp, list):
+        return resp
+    return _unwrap_list(resp, prefer)
+
+
 def _unwrap_list(resp: Any, prefer: str | None = None) -> list:
     """Vortex often returns { status, data: { holdings: [...] } } or a bare list."""
     if isinstance(resp, list):

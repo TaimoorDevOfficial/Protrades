@@ -36,6 +36,66 @@ def _format_inr(n: float) -> str:
     return f"₹{n:,.2f}"
 
 
+def _rule_based_reply(user_text: str) -> str | None:
+    """
+    Offline / no-API-key responses from simple keyword rules (Indian market context).
+    Returns None if no rule matched (caller may use a generic fallback).
+    """
+    t = (user_text or "").lower().strip()
+    if not t:
+        return None
+
+    if any(k in t for k in ("market update", "market today", "nifty", "sensex", "bank nifty", "banknifty")):
+        return (
+            "Quick framework for Indian markets (offline rule): check Nifty 50 / Sensex vs previous close, "
+            "sector breadth (advance-decline), and whether Bank Nifty is leading or lagging. "
+            "Pre-open 9:00–9:15, cash 9:15–15:30, closing 15:30–16:00 IST. "
+            "For live levels and news, add an Anthropic API key in Settings so ProBot can search the web.\n"
+            "— ProBot, ProTrades"
+        )
+    if any(k in t for k in ("corporate action", "dividend", "split", "bonus", "rights", "buyback", "earnings")):
+        return (
+            "Corporate actions checklist (offline rule): verify record date / ex-date, adjustment factor for splits, "
+            "and whether options strikes roll on corporate events. Cross-check on the exchange circular and your broker’s notice.\n"
+            "— ProBot, ProTrades"
+        )
+    if any(k in t for k in ("p&l", "pnl", "profit", "loss", "portfolio")):
+        return (
+            "Portfolio P&L (offline rule): separate delivery (CNC) vs intraday (MIS), include charges and slippage, "
+            "and compare vs a benchmark (e.g. Nifty) over the same horizon. "
+            "Your synced holdings in ProTrades are the source of truth once broker login completes.\n"
+            "— ProBot, ProTrades"
+        )
+    if any(k in t for k in ("fii", "dii", "flow", "delivery")):
+        return (
+            "Flows & delivery (offline rule): FII/DII numbers are provisional until finalized; use them as context, not a sole signal. "
+            "High delivery percentage can indicate conviction on cash counters—confirm with price/volume structure.\n"
+            "— ProBot, ProTrades"
+        )
+    if any(k in t for k in ("risk", "stop", "position size", "size")):
+        return (
+            "Risk basics (offline rule): size positions from max loss per trade, keep leverage within broker margin, "
+            "and avoid concentration in one sector or single stock. Use stop losses where the strategy defines invalidation.\n"
+            "— ProBot, ProTrades"
+        )
+    if "hello" in t or t in ("hi", "hey"):
+        return (
+            "Hi — ProBot offline mode. Ask about markets, corporate actions, P&L, or risk; "
+            "add an API key in Settings for web-backed answers.\n"
+            "— ProBot, ProTrades"
+        )
+    return None
+
+
+def _offline_generic_reply() -> str:
+    return (
+        "ProBot is running in offline rule mode (no Anthropic API key configured). "
+        "Try prompts like “market update”, “corporate actions”, “P&L”, or “risk”. "
+        "Add CLAUDE_KEY in the server `.env` or store a key in Settings for full AI + web search.\n"
+        "— ProBot, ProTrades"
+    )
+
+
 def _system_prompt(
     db: Session,
     session: BrokerSession | None,
@@ -66,15 +126,22 @@ Sign off responses with: "— ProBot, ProTrades"
 def probot_chat(body: ChatBody, db: Session = Depends(get_db), broker: BrokerSession | None = Depends(get_broker_session)):
     settings = get_settings()
     api_key = settings.claude_key or get_setting(db, "claude_key_store")
-    if not api_key:
-        raise HTTPException(status_code=503, detail="Configure CLAUDE_KEY or add Anthropic key in Settings.")
-
-    client = Anthropic(api_key=api_key)
-    sys = _system_prompt(db, broker)
 
     msgs = [{"role": m.role, "content": m.content} for m in body.messages if m.content.strip()]
     if not msgs:
         raise HTTPException(status_code=400, detail="No messages")
+
+    user_msg = body.messages[-1].content if body.messages else ""
+
+    if not api_key:
+        text = _rule_based_reply(user_msg) or _offline_generic_reply()
+        db.add(ChatHistory(session_id=body.session_id, role="user", content=user_msg))
+        db.add(ChatHistory(session_id=body.session_id, role="assistant", content=text))
+        db.commit()
+        return {"reply": text, "model": "rules-offline", "source": "rules"}
+
+    client = Anthropic(api_key=api_key)
+    sys = _system_prompt(db, broker)
 
     tools = [{"type": "web_search_20250305", "name": "web_search", "max_uses": 5}]
 
@@ -100,12 +167,11 @@ def probot_chat(body: ChatBody, db: Session = Depends(get_db), broker: BrokerSes
             parts.append(block.text)
     text = "\n".join(parts).strip()
 
-    user_msg = body.messages[-1].content if body.messages else ""
     db.add(ChatHistory(session_id=body.session_id, role="user", content=user_msg))
     db.add(ChatHistory(session_id=body.session_id, role="assistant", content=text))
     db.commit()
 
-    return {"reply": text, "model": settings.claude_model}
+    return {"reply": text, "model": settings.claude_model, "source": "claude"}
 
 
 class FeedbackBody(BaseModel):

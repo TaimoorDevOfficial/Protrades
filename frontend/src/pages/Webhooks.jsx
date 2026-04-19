@@ -74,7 +74,7 @@ export default function Webhooks() {
       <section>
         <h2 className="font-headline text-lg font-semibold text-on-surface">Live log</h2>
         <p className="page-sub">Recent webhook events across all sources</p>
-        <div className="mt-4 overflow-x-auto rounded-lg bg-surface-container">
+        <div className="scroll-list-wrap mt-4">
           <table className="table-qe min-w-full text-left text-sm">
             <thead>
               <tr className="border-b border-outline-variant/10">

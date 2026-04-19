@@ -14,7 +14,7 @@ from database import get_db
 from deps import get_broker_session, require_session, security
 from models import BrokerSession
 from security import create_access_token, decrypt_value, encrypt_value, safe_decode_token
-from services.rupeezzy import RupeezzyClient, compute_expiry, extract_access_token
+from services.rupeezzy import RupeezzyClient, compute_expiry, extract_access_token, map_vortex_holdings_rows
 
 router = APIRouter(prefix="/auth", tags=["auth"])
 logger = logging.getLogger(__name__)
@@ -29,7 +29,8 @@ async def _sync_portfolio_for_token(
     from services.rupeezzy import normalize_to_list
 
     try:
-        holdings = normalize_to_list(await client.holdings(token), "holdings")
+        hl = await client.holdings(token)
+        holdings = map_vortex_holdings_rows(hl if isinstance(hl, list) else [])
         positions = normalize_to_list(await client.positions(token), "positions")
         orders = normalize_to_list(await client.orders(token), "orders")
         funds = await client.funds(token)
@@ -349,12 +350,37 @@ async def rupeezzy_exchange_sso(body: RupeezySsoBody, db: Session = Depends(get_
             auth_code=body.auth_code.strip(),
         )
     except httpx.HTTPStatusError as e:
-        raise HTTPException(status_code=401, detail=f"Vortex session exchange failed: {e.response.status_code}") from e
+        preview = ""
+        try:
+            preview = (e.response.text or "")[:800]
+        except Exception:
+            pass
+        raise HTTPException(
+            status_code=401,
+            detail=f"Vortex /user/session HTTP {e.response.status_code}: {preview or '(empty body)'}",
+        ) from e
     except (httpx.ConnectError, httpx.ConnectTimeout) as e:
         raise HTTPException(status_code=503, detail=f"Cannot reach Vortex API: {e!s}") from e
+
+    # Vortex often returns HTTP 200 with {"status":"error","message":"..."} (e.g. invalid token)
+    if isinstance(login_resp, dict) and str(login_resp.get("status", "")).lower() == "error":
+        vm = login_resp.get("message") or login_resp.get("error") or "session exchange failed"
+        raise HTTPException(status_code=401, detail=f"Vortex: {vm}")
+
     token = extract_access_token(login_resp)
     if not token:
-        raise HTTPException(status_code=401, detail="No access_token from Vortex session exchange")
+        try:
+            preview = json.dumps(login_resp, default=str)[:1200]
+        except Exception:
+            preview = str(login_resp)[:1200]
+        logger.warning("Vortex /user/session returned no extractable token. Body preview: %s", preview)
+        raise HTTPException(
+            status_code=401,
+            detail=(
+                "No access_token in Vortex response — verify VORTEX_APPLICATION_ID matches the flow URL, "
+                "VORTEX_X_API_KEY is correct for that app, use a fresh redirect URL, and check server logs."
+            ),
+        )
 
     expires_at = compute_expiry(login_resp)
     enc = encrypt_value(settings, token)

@@ -12,7 +12,7 @@ from database import get_db
 from deps import require_session
 from models import Watchlist
 from routes.market import build_market_brief_payload
-from services.rupeezzy import nse_corporate_actions
+from services.nse_ca import nse_corporate_actions, symbol_from_ca_row
 
 router = APIRouter(prefix="/intel", tags=["intel"])
 
@@ -179,7 +179,7 @@ async def stream(
     sym_set = set(symbols)
     ca_items = []
     for row in ca:
-        s = str(row.get("symbol") or row.get("SYMBOL") or "").upper().strip()
+        s = symbol_from_ca_row(row)
         if s and s in sym_set:
             ca_items.append(
                 {

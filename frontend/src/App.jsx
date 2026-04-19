@@ -6,12 +6,15 @@ import SettingsPage from "./pages/Settings.jsx";
 import Watchlist from "./pages/Watchlist.jsx";
 import MarketBrief from "./pages/Market.jsx";
 import Intel from "./pages/Intel.jsx";
+import { SessionDataProvider } from "./context/SessionDataContext.jsx";
 
 function PrivateLayout() {
   return (
-    <Layout>
-      <Outlet />
-    </Layout>
+    <SessionDataProvider>
+      <Layout>
+        <Outlet />
+      </Layout>
+    </SessionDataProvider>
   );
 }
 

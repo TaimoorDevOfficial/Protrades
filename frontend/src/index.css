@@ -51,6 +51,26 @@
   .table-qe tbody tr {
     @apply transition-colors hover:bg-surface-bright/30;
   }
+
+  /** ~6–7 rows visible, then vertical scroll (tables) */
+  .scroll-list-wrap {
+    @apply max-h-[min(42vh,21rem)] overflow-y-auto overflow-x-auto rounded-lg bg-surface-container;
+  }
+
+  .scroll-list-wrap table thead th {
+    @apply sticky top-0 z-[1] bg-surface-container;
+    box-shadow: 0 1px 0 rgb(255 255 255 / 0.06);
+  }
+
+  /** Scroll area inside an existing card (no extra surface bg) */
+  .scroll-list-body {
+    @apply max-h-[min(42vh,21rem)] overflow-y-auto overflow-x-hidden;
+  }
+
+  /** Card / grid lists (watchlist, briefing cards, etc.) */
+  .scroll-card-list {
+    @apply max-h-[min(42vh,21rem)] overflow-y-auto overflow-x-auto rounded-lg;
+  }
 }
 
 .numeric {

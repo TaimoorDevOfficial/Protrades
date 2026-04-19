@@ -1,5 +1,6 @@
-import { useEffect, useState } from "react";
+import { useCallback, useRef } from "react";
 import { api } from "../api.js";
+import { SessionRefreshBanner, useSessionCachedFetch } from "../context/SessionDataContext.jsx";
 
 function fmt(n, digits = 2) {
   if (n == null || Number.isNaN(Number(n))) return "—";
@@ -7,27 +8,19 @@ function fmt(n, digits = 2) {
 }
 
 export default function MarketBrief() {
-  const [data, setData] = useState(null);
-  const [loading, setLoading] = useState(true);
-  const [err, setErr] = useState("");
-
-  const load = async () => {
-    setErr("");
-    setLoading(true);
-    try {
-      const d = await api("/api/market/brief");
-      setData(d);
-    } catch (e) {
-      setErr(e.message || "Failed to load market brief");
-      setData(null);
-    } finally {
-      setLoading(false);
-    }
-  };
-
-  useEffect(() => {
-    load().catch(() => {});
+  const refreshBypassCacheRef = useRef(false);
+  const loadBrief = useCallback(() => {
+    const q = refreshBypassCacheRef.current ? "?refresh=1" : "";
+    refreshBypassCacheRef.current = false;
+    return api(`/api/market/brief${q}`);
   }, []);
+
+  const { data, error, reload, refreshing } = useSessionCachedFetch("marketBrief", loadBrief);
+
+  const refreshFresh = useCallback(() => {
+    refreshBypassCacheRef.current = true;
+    reload();
+  }, [reload]);
 
   const rows = data?.holdings || [];
   const actions = data?.corporate_actions || [];
@@ -41,22 +34,31 @@ export default function MarketBrief() {
         </div>
         <button
           type="button"
-          onClick={() => load().catch(() => {})}
+          onClick={() => refreshFresh()}
+          disabled={refreshing}
           className="rounded-md bg-gradient-to-br from-primary to-primary-container px-5 py-3 text-sm font-semibold text-on-primary-fixed disabled:opacity-50"
-          disabled={loading}
         >
-          {loading ? "Refreshing…" : "Refresh"}
+          {refreshing ? "Refreshing…" : "Refresh"}
         </button>
       </div>
 
-      {err && <div className="card-qe border border-tertiary-container/30 text-sm text-tertiary-container">{err}</div>}
+      <SessionRefreshBanner cacheKey="marketBrief" />
+
+      {error && (
+        <div className="card-qe border border-tertiary-container/30 text-sm text-tertiary-container">
+          {error}{" "}
+          <button type="button" className="font-medium text-primary underline" onClick={() => refreshFresh()}>
+            Retry
+          </button>
+        </div>
+      )}
 
       <section className="card-qe border border-outline-variant/10">
         <h2 className="font-headline text-sm font-semibold text-on-surface">Snapshot</h2>
         <p className="mt-1 text-xs text-on-surface-variant">
           LTP via Vortex quotes. Day change is vs the day open candle. Includes holdings and watchlist.
         </p>
-        <div className="mt-4 overflow-x-auto rounded-lg bg-surface-container">
+        <div className="scroll-list-wrap mt-4">
           <table className="table-qe min-w-full text-left text-sm">
             <thead>
               <tr className="border-b border-outline-variant/10">
@@ -71,12 +73,12 @@ export default function MarketBrief() {
               </tr>
             </thead>
             <tbody>
-              {rows.map((r) => {
+              {rows.map((r, idx) => {
                 const pct = r.day_change_pct;
                 const pctColor = pct != null && pct < 0 ? "text-tertiary-container" : "text-secondary";
                 const pnlColor = r.pnl != null && r.pnl < 0 ? "text-tertiary-container" : "text-secondary";
                 return (
-                  <tr key={`${r.exchange}-${r.token}`} className="border-b border-outline-variant/5">
+                  <tr key={`${r.symbol}-${r.exchange}-${String(r.token ?? idx)}`} className="border-b border-outline-variant/5">
                     <td className="px-4 py-3 font-mono text-xs text-primary">{r.symbol}</td>
                     <td className="px-4 py-3 text-xs text-on-surface-variant">
                       {r.source === "watchlist" ? "Watchlist" : "Holding"}
@@ -111,7 +113,7 @@ export default function MarketBrief() {
         <p className="mt-1 text-xs text-on-surface-variant">
           Best-effort feed from NSE; may be empty if NSE blocks automated requests.
         </p>
-        <div className="mt-4 overflow-x-auto rounded-lg bg-surface-container">
+        <div className="scroll-list-wrap mt-4">
           <table className="table-qe min-w-full text-left text-sm">
             <thead>
               <tr className="border-b border-outline-variant/10">
@@ -144,4 +146,3 @@ export default function MarketBrief() {
     </div>
   );
 }
-

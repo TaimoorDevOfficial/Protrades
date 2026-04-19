@@ -327,7 +327,8 @@ export default function Strategies() {
             Add strategy
           </button>
         </div>
-        <div className="grid gap-3 md:grid-cols-2">
+        <div className="scroll-card-list">
+          <div className="grid gap-3 md:grid-cols-2">
           {rows.map((r) => (
             <div key={r.id} className="rounded-lg bg-surface-container p-4">
               <div className="flex items-center justify-between">
@@ -345,6 +346,7 @@ export default function Strategies() {
               </p>
             </div>
           ))}
+          </div>
         </div>
       </section>
     </div>

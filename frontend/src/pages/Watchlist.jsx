@@ -1,19 +1,17 @@
-import { useEffect, useMemo, useRef, useState } from "react";
+import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import { api } from "../api.js";
 import TradingViewEmbed, { formatTvSymbol } from "../components/TradingViewEmbed.jsx";
+import { SessionRefreshBanner, useSessionCachedFetch } from "../context/SessionDataContext.jsx";
 
 export default function Watchlist() {
-  const [rows, setRows] = useState([]);
+  const loadWatch = useCallback(() => api("/api/settings/watchlist"), []);
+  const { data, error, reload } = useSessionCachedFetch("watchlist", loadWatch);
+  const rows = data ?? [];
+
   const [sym, setSym] = useState("");
   const [chartSymbol, setChartSymbol] = useState("NSE:RELIANCE");
   const [customChart, setCustomChart] = useState("");
   const chartSeeded = useRef(false);
-
-  const load = () => api("/api/settings/watchlist").then(setRows);
-
-  useEffect(() => {
-    load().catch(() => {});
-  }, []);
 
   useEffect(() => {
     if (!chartSeeded.current && rows.length > 0) {
@@ -29,7 +27,7 @@ export default function Watchlist() {
       body: JSON.stringify({ symbol: sym, exchange: "NSE" }),
     });
     setSym("");
-    load();
+    reload();
   };
 
   const chartOptions = useMemo(() => {
@@ -47,6 +45,17 @@ export default function Watchlist() {
           Live TradingView chart below · your symbols feed Intel and Market pages
         </p>
       </div>
+
+      <SessionRefreshBanner cacheKey="watchlist" />
+
+      {error && (
+        <div className="rounded-lg border border-tertiary-container/30 px-4 py-3 text-sm text-tertiary-container">
+          {error}{" "}
+          <button type="button" className="font-medium text-primary underline" onClick={() => reload()}>
+            Retry
+          </button>
+        </div>
+      )}
 
       <section className="space-y-4">
         <div className="flex flex-col gap-3 sm:flex-row sm:items-end sm:justify-between">
@@ -116,7 +125,8 @@ export default function Watchlist() {
             Add
           </button>
         </div>
-        <div className="grid gap-3 md:grid-cols-2">
+        <div className="scroll-card-list">
+          <div className="grid gap-3 md:grid-cols-2">
           {rows.map((w) => (
             <div
               key={w.id}
@@ -129,12 +139,15 @@ export default function Watchlist() {
               <button
                 type="button"
                 className="text-xs text-tertiary-container hover:underline"
-                onClick={() => api(`/api/settings/watchlist/${w.id}`, { method: "DELETE" }).then(() => load())}
+                onClick={() =>
+                  api(`/api/settings/watchlist/${w.id}`, { method: "DELETE" }).then(() => reload())
+                }
               >
                 Remove
               </button>
             </div>
           ))}
+          </div>
         </div>
       </section>
     </div>

@@ -131,7 +131,7 @@ export default function ProBot() {
               </button>
             ))}
           </div>
-          <div className="max-h-[360px] space-y-3 overflow-y-auto px-3 py-3">
+          <div className="max-h-[min(42vh,21rem)] space-y-3 overflow-y-auto px-3 py-3">
             {msgs.length === 0 && (
               <p className="text-sm text-on-surface-variant">
                 Ask about markets, corporate actions, or your workflow.

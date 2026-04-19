@@ -30,13 +30,117 @@ def _unwrap_list(resp: Any, prefer: str | None = None) -> list:
     if isinstance(data, list):
         return data
     if isinstance(data, dict):
-        for k in ("holdings", "positions", "orders", "trades", "rows"):
+        for k in (
+            "holdings",
+            "positions",
+            "orders",
+            "trades",
+            "rows",
+            "result",
+            "items",
+            "records",
+            "holdingList",
+            "holdingsList",
+            "values",
+        ):
             if isinstance(data.get(k), list):
                 return data[k]
     for k in ("holdings", "positions", "orders", "trades"):
         if isinstance(resp.get(k), list):
             return resp[k]
     return []
+
+
+def _vortex_exchange_str(ex: Any) -> str:
+    s = str(ex or "NSE_EQ").upper().strip()
+    if s in ("NSE", "NSEEQ", "NSE_EQ"):
+        return "NSE_EQ"
+    if s in ("BSE", "BSEEQ", "BSE_EQ"):
+        return "BSE_EQ"
+    return s or "NSE_EQ"
+
+
+def map_vortex_holdings_rows(rows: list[Any]) -> list[dict[str, Any]]:
+    """
+    Vortex GET /trading/portfolio/holdings returns nested nse/bse + total_free/t1_quantity.
+    UI and older code expect flat symbol, quantity, avg_price, ltp, pnl_percent.
+    Guest/mock rows may already be flat.
+    """
+    out: list[dict[str, Any]] = []
+    for h in rows:
+        if not isinstance(h, dict):
+            continue
+        if h.get("symbol") and not isinstance(h.get("nse"), dict) and not isinstance(h.get("bse"), dict):
+            try:
+                qty = float(h.get("quantity") or h.get("qty") or 0)
+            except (TypeError, ValueError):
+                qty = 0.0
+            flat: dict[str, Any] = {
+                "symbol": str(h.get("symbol") or "").strip(),
+                "quantity": qty,
+                "avg_price": h.get("avg_price") or h.get("average_price"),
+                "ltp": h.get("ltp"),
+                "pnl_percent": h.get("pnl_percent") or h.get("pnl_pct"),
+            }
+            tok = h.get("token") or h.get("instrument_token")
+            if tok is not None and str(tok).strip() != "":
+                try:
+                    flat["token"] = int(float(tok))
+                    flat["exchange"] = _vortex_exchange_str(h.get("exchange") or "NSE_EQ")
+                except (TypeError, ValueError):
+                    pass
+            out.append(flat)
+            continue
+
+        sym = ""
+        nse, bse = h.get("nse"), h.get("bse")
+        if isinstance(nse, dict) and nse.get("symbol"):
+            sym = str(nse.get("symbol")).strip()
+        if not sym and isinstance(bse, dict) and bse.get("symbol"):
+            sym = str(bse.get("symbol")).strip()
+        if not sym:
+            sym = str(h.get("symbol") or h.get("tradingsymbol") or h.get("tradingSymbol") or "").strip()
+
+        tf = h.get("total_free")
+        t1 = h.get("t1_quantity")
+        if tf is not None or t1 is not None:
+            try:
+                qty = float(tf or 0) + float(t1 or 0)
+            except (TypeError, ValueError):
+                qty = 0.0
+        else:
+            try:
+                qty = float(h.get("quantity") or h.get("qty") or 0)
+            except (TypeError, ValueError):
+                qty = 0.0
+
+        avg = h.get("average_price") or h.get("avg_price") or h.get("averagePrice")
+        ltp = h.get("ltp") or h.get("last_price") or h.get("close")
+        pnl = h.get("pnl_percent") or h.get("pnl_pct") or h.get("pnlPercent")
+
+        if not sym and qty == 0:
+            continue
+        row: dict[str, Any] = {
+            "symbol": sym,
+            "quantity": qty,
+            "avg_price": avg,
+            "ltp": ltp,
+            "pnl_percent": pnl,
+        }
+        if isinstance(nse, dict) and nse.get("token") is not None:
+            try:
+                row["token"] = int(float(nse["token"]))
+                row["exchange"] = _vortex_exchange_str(nse.get("exchange") or "NSE_EQ")
+            except (TypeError, ValueError):
+                pass
+        elif isinstance(bse, dict) and bse.get("token") is not None:
+            try:
+                row["token"] = int(float(bse["token"]))
+                row["exchange"] = _vortex_exchange_str(bse.get("exchange") or "BSE_EQ")
+            except (TypeError, ValueError):
+                pass
+        out.append(row)
+    return out
 
 
 def _unwrap_dict(resp: Any) -> dict[str, Any]:
@@ -51,12 +155,18 @@ def _unwrap_dict(resp: Any) -> dict[str, Any]:
 
 
 def extract_access_token(login_response: dict[str, Any]) -> str:
-    data = login_response.get("data") or {}
-    return (
-        str(data.get("access_token") or "")
-        or str(login_response.get("access_token") or "")
-        or str(login_response.get("token") or "")
-    )
+    """Vortex may return access_token, token, or camelCase variants under data or top-level."""
+    data = login_response.get("data")
+    if not isinstance(data, dict):
+        data = {}
+    for src in (data, login_response):
+        if not isinstance(src, dict):
+            continue
+        for key in ("access_token", "accessToken", "token", "auth_token"):
+            v = src.get(key)
+            if v is not None and str(v).strip():
+                return str(v).strip()
+    return ""
 
 
 def map_norm_exchange_to_vortex(norm: dict[str, Any]) -> str:
@@ -424,33 +534,6 @@ class RupeezzyClient:
         if path.startswith("/funds") or path.endswith("/funds"):
             return {"available": 250000.0, "utilized": 50000.0, "collateral": 0.0}
         return {}
-
-
-async def nse_corporate_actions() -> list[dict[str, Any]]:
-    """
-    Pull corporate actions from NSE public endpoint.
-    Note: NSE may rate-limit; we keep this best-effort and non-fatal.
-    """
-    url = "https://www.nseindia.com/api/corporates-corporateActions?index=equities"
-    headers = {
-        "User-Agent": "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/122 Safari/537.36",
-        "Accept": "application/json,text/plain,*/*",
-        "Referer": "https://www.nseindia.com/",
-    }
-    async with httpx.AsyncClient(timeout=30.0, headers=headers, follow_redirects=True) as client:
-        try:
-            # NSE often needs a homepage hit first for cookies
-            await client.get("https://www.nseindia.com/")
-            r = await client.get(url)
-            r.raise_for_status()
-            data = r.json()
-            if isinstance(data, dict) and isinstance(data.get("data"), list):
-                return [x for x in data["data"] if isinstance(x, dict)]
-            if isinstance(data, list):
-                return [x for x in data if isinstance(x, dict)]
-        except Exception:
-            return []
-    return []
 
 
 def compute_expiry(login_response: dict[str, Any]) -> datetime | None:

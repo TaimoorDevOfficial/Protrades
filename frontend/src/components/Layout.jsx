@@ -3,6 +3,7 @@ import { useCallback, useEffect, useMemo, useState } from "react";
 import MsIcon from "./MsIcon.jsx";
 import ProBot from "./ProBot.jsx";
 import { api, setToken } from "../api.js";
+import { useSessionData } from "../context/SessionDataContext.jsx";
 
 function earliestSessionEndIso(status) {
   const times = [];
@@ -39,6 +40,7 @@ function openProbot() {
 
 export default function Layout({ children }) {
   const navigate = useNavigate();
+  const { clearAll: clearSessionTabCache } = useSessionData();
   const [connected, setConnected] = useState(false);
   const [status, setStatus] = useState(null);
 
@@ -85,6 +87,7 @@ export default function Layout({ children }) {
     } catch {
       /* still clear local session */
     }
+    clearSessionTabCache();
     setToken("");
     navigate("/login", { replace: true });
   };

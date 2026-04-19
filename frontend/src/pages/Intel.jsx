@@ -1,5 +1,6 @@
-import { useEffect, useMemo, useState } from "react";
+import { useCallback, useMemo, useState } from "react";
 import { api } from "../api.js";
+import { SessionRefreshBanner, useSessionCachedFetch, useSessionData } from "../context/SessionDataContext.jsx";
 
 function groupBy(items, keyFn) {
   const m = new Map();
@@ -12,35 +13,20 @@ function groupBy(items, keyFn) {
 }
 
 export default function Intel() {
-  const [data, setData] = useState(null);
-  const [brief, setBrief] = useState(null);
-  const [loading, setLoading] = useState(true);
+  const loadStream = useCallback(() => api("/api/intel/stream"), []);
+  const { data, refreshing, error, reload } = useSessionCachedFetch("intelStream", loadStream);
+  const { cache, setCachedData } = useSessionData();
+  const brief = cache.intelBrief;
+
   const [briefLoading, setBriefLoading] = useState(false);
   const [err, setErr] = useState("");
 
-  const load = async () => {
-    setErr("");
-    setLoading(true);
-    try {
-      const d = await api("/api/intel/stream");
-      setData(d);
-    } catch (e) {
-      setErr(e.message || "Failed to load intel feed");
-      setData(null);
-    } finally {
-      setLoading(false);
-    }
-  };
-
-  useEffect(() => {
-    load().catch(() => {});
-  }, []);
-
   const loadBrief = async () => {
+    setErr("");
     setBriefLoading(true);
     try {
       const d = await api("/api/intel/brief");
-      setBrief(d);
+      setCachedData("intelBrief", d);
     } catch (e) {
       setErr(e.message || "Failed to load daily briefing");
     } finally {
@@ -52,7 +38,7 @@ export default function Intel() {
   const byType = useMemo(() => groupBy(items, (x) => x.type || "other"), [items]);
 
   const renderList = (list) => (
-    <div className="mt-4 overflow-x-auto rounded-lg bg-surface-container">
+    <div className="scroll-list-wrap mt-4">
       <table className="table-qe min-w-full text-left text-sm">
         <thead>
           <tr className="border-b border-outline-variant/10">
@@ -110,16 +96,27 @@ export default function Intel() {
           </button>
           <button
             type="button"
-            onClick={() => load().catch(() => {})}
+            onClick={() => reload()}
             className="rounded-md bg-gradient-to-br from-primary to-primary-container px-5 py-3 text-sm font-semibold text-on-primary-fixed disabled:opacity-50"
-            disabled={loading}
+            disabled={refreshing}
           >
-            {loading ? "Refreshing…" : "Refresh feed"}
+            {refreshing ? "Refreshing…" : "Refresh feed"}
           </button>
         </div>
       </div>
 
-      {err && <div className="card-qe border border-tertiary-container/30 text-sm text-tertiary-container">{err}</div>}
+      <SessionRefreshBanner cacheKey="intelStream" />
+
+      {(err || error) && (
+        <div className="card-qe border border-tertiary-container/30 text-sm text-tertiary-container">
+          {err || error}{" "}
+          {error && (
+            <button type="button" className="font-medium text-primary underline" onClick={() => reload()}>
+              Retry feed
+            </button>
+          )}
+        </div>
+      )}
 
       <section className="card-qe border border-outline-variant/10">
         <h2 className="font-headline text-sm font-semibold text-on-surface">Daily briefing</h2>
@@ -142,7 +139,8 @@ export default function Intel() {
                 {(brief.summary || []).length === 0 && <p className="text-on-surface-variant">No high-priority changes detected.</p>}
               </div>
             </div>
-            <div className="grid gap-3 md:grid-cols-2 xl:grid-cols-3">
+            <div className="scroll-card-list">
+              <div className="grid gap-3 md:grid-cols-2 xl:grid-cols-3">
               {(brief.cards || []).map((c) => (
                 <div key={c.symbol} className="rounded-lg bg-surface-container px-4 py-4">
                   <div className="flex items-center justify-between gap-3">
@@ -167,6 +165,7 @@ export default function Intel() {
                   <p className="mt-3 text-sm text-on-surface">{c.action}</p>
                 </div>
               ))}
+              </div>
             </div>
           </div>
         ) : null}
@@ -194,4 +193,3 @@ export default function Intel() {
     </div>
   );
 }
-

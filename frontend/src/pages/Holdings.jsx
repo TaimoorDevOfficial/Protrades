@@ -1,29 +1,15 @@
-import { useEffect, useState } from "react";
+import { useCallback } from "react";
 import { api } from "../api.js";
+import { SessionRefreshBanner, useSessionCachedFetch } from "../context/SessionDataContext.jsx";
 
 export default function Holdings() {
-  const [rows, setRows] = useState([]);
-
-  useEffect(() => {
-    let cancelled = false;
-    (async () => {
-      try {
-        await api("/api/auth/refresh", { method: "POST" });
-      } catch {
-        /* still show last synced rows */
-      }
-      if (cancelled) return;
-      try {
-        const d = await api("/api/data/holdings");
-        if (!cancelled) setRows(d.holdings || []);
-      } catch {
-        if (!cancelled) setRows([]);
-      }
-    })();
-    return () => {
-      cancelled = true;
-    };
+  const loadHoldings = useCallback(async () => {
+    await api("/api/auth/refresh", { method: "POST" });
+    return api("/api/data/holdings");
   }, []);
+
+  const { data, error, reload } = useSessionCachedFetch("holdings", loadHoldings);
+  const rows = data?.holdings ?? [];
 
   return (
     <div className="space-y-6">
@@ -31,7 +17,16 @@ export default function Holdings() {
         <h1 className="page-title">Holdings</h1>
         <p className="page-sub">Synced from Rupeezzy on login / refresh</p>
       </div>
-      <div className="overflow-x-auto rounded-lg bg-surface-container">
+      <SessionRefreshBanner cacheKey="holdings" />
+      {error && (
+        <div className="rounded-lg border border-tertiary-container/30 px-4 py-3 text-sm text-tertiary-container">
+          {error}{" "}
+          <button type="button" className="font-medium text-primary underline" onClick={() => reload()}>
+            Retry
+          </button>
+        </div>
+      )}
+      <div className="scroll-list-wrap">
         <table className="table-qe min-w-full text-left text-sm">
           <thead>
             <tr className="border-b border-outline-variant/10">

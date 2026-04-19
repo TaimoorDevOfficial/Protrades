@@ -32,7 +32,7 @@ export default function Logs() {
           Search
         </button>
       </div>
-      <div className="overflow-x-auto rounded-lg bg-surface-container">
+      <div className="scroll-list-wrap">
         <table className="table-qe min-w-full text-left text-sm">
           <thead>
             <tr className="border-b border-outline-variant/10">

@@ -55,7 +55,7 @@ export default function Portfolio() {
 
       <div className="rounded-lg bg-surface-container p-6">
         <h2 className="font-headline text-sm font-semibold text-on-surface">Top holdings</h2>
-        <ul className="mt-4 space-y-3">
+        <ul className="scroll-list-body mt-4 space-y-3 pr-1">
           {holdings.slice(0, 8).map((h, i) => (
             <li
               key={i}

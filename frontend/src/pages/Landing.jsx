@@ -1,7 +1,7 @@
-import { useEffect } from "react";
+import { useEffect, useRef } from "react";
 import { useNavigate } from "react-router-dom";
 import MsIcon from "../components/MsIcon.jsx";
-import ScrollFrameSequence from "../components/ScrollFrameSequence.jsx";
+import ScrollFrameBackground from "../components/ScrollFrameBackground.jsx";
 import { api, getToken } from "../api.js";
 
 const RUPEEZY_REFERRAL_URL =
@@ -25,6 +25,7 @@ function Feature({ icon, title, children }) {
 
 export default function Landing() {
   const nav = useNavigate();
+  const pageRef = useRef(null);
 
   useEffect(() => {
     const t = getToken();
@@ -37,26 +38,11 @@ export default function Landing() {
   }, [nav]);
 
   return (
-    <div className="relative min-h-screen overflow-hidden bg-surface-container-lowest px-4 font-body text-on-surface selection:bg-primary selection:text-on-primary-fixed">
-      <div className="trading-pattern-bg pointer-events-none absolute inset-0 z-0 opacity-40" />
-      <div className="pointer-events-none absolute inset-0 z-0 flex items-center justify-center overflow-hidden opacity-[0.12]">
-        <svg className="h-full w-full" preserveAspectRatio="none" viewBox="0 0 1000 400">
-          <path
-            d="M0,350 L100,320 L200,360 L300,280 L400,310 L500,240 L600,260 L700,180 L800,220 L900,120 L1000,150"
-            fill="none"
-            stroke="#A4E6FF"
-            strokeWidth="2"
-          />
-          <path
-            d="M0,380 L150,340 L300,370 L450,290 L600,330 L750,210 L900,250 L1000,180"
-            fill="none"
-            opacity="0.5"
-            stroke="#44E092"
-            strokeDasharray="8 4"
-            strokeWidth="1.5"
-          />
-        </svg>
-      </div>
+    <div
+      ref={pageRef}
+      className="relative min-h-screen bg-surface-container-lowest px-4 font-body text-on-surface selection:bg-primary selection:text-on-primary-fixed"
+    >
+      <ScrollFrameBackground triggerRef={pageRef} />
 
       <header className="relative z-10 mx-auto flex w-full max-w-6xl items-center justify-between py-8">
         <div className="flex items-center gap-3">
@@ -145,8 +131,6 @@ export default function Landing() {
           </section>
 
           <section className="space-y-4">
-            <ScrollFrameSequence className="lg:mt-1" pinHeightVh={220} />
-
             <div className="glass-panel rounded-2xl border border-outline-variant/15 p-6 shadow-ambient">
               <p className="text-xs font-semibold text-on-surface">How it works</p>
               <ol className="mt-4 space-y-3 text-sm text-on-surface-variant">

@@ -6,6 +6,8 @@ const QUICK = [
   { label: "📊 Market Update", text: "Give me a concise Indian market update for today with sources." },
   { label: "🏢 Corporate Actions", text: "Corporate actions for my watchlist and holdings this week." },
   { label: "💰 My P&L", text: "Summarize my portfolio P&L contextually for ProTrades." },
+  { label: "🧭 Services", text: "Explain all ProTrades services and how to use each tab (Intel, Market, Watchlist, Holdings, Trade, Chartink, Contact)." },
+  { label: "📅 Contact", text: "How can I contact you and schedule a meeting? Mention the Contact tab." },
 ];
 
 export default function ProBot() {

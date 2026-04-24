@@ -8,6 +8,8 @@ import Watchlist from "./pages/Watchlist.jsx";
 import MarketBrief from "./pages/Market.jsx";
 import Intel from "./pages/Intel.jsx";
 import Trade from "./pages/Trade.jsx";
+import Chartink from "./pages/Chartink.jsx";
+import Contact from "./pages/Contact.jsx";
 import { SessionDataProvider } from "./context/SessionDataContext.jsx";
 
 function PrivateLayout() {
@@ -31,6 +33,8 @@ export default function App() {
         <Route path="/watchlist" element={<Watchlist />} />
         <Route path="/holdings" element={<Holdings />} />
         <Route path="/trade" element={<Trade />} />
+        <Route path="/chartink" element={<Chartink />} />
+        <Route path="/contact" element={<Contact />} />
         <Route path="/settings" element={<SettingsPage />} />
       </Route>
       <Route

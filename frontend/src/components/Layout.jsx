@@ -32,6 +32,8 @@ const nav = [
   { to: "/watchlist", label: "Watchlist", icon: "visibility" },
   { to: "/holdings", label: "Holdings", icon: "stacked_line_chart" },
   { to: "/trade", label: "Trade", icon: "swap_horiz" },
+  { to: "/chartink", label: "Chartink", icon: "bolt" },
+  { to: "/contact", label: "Contact", icon: "support_agent" },
   { to: "/settings", label: "Settings", icon: "settings" },
 ];
 

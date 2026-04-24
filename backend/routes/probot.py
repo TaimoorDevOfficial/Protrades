@@ -114,12 +114,39 @@ def _intent_hint(user_text_lower: str) -> str | None:
     return None
 
 
+def _services_reply() -> str:
+    return (
+        "Here’s what ProTrades can do (services / tabs):\n"
+        "\n"
+        "1) Intel: watchlist + holdings intelligence, corporate actions filtered to your symbols.\n"
+        "2) Market: snapshot from Rupeezy/Vortex (LTP, day % move vs open, P&L when available).\n"
+        "3) Watchlist: your symbol set that powers Intel + Market.\n"
+        "4) Holdings: broker-synced holdings table.\n"
+        "5) Trade: manual order entry routed via Rupeezy/Vortex (risk + paper mode enforced).\n"
+        "6) Chartink: webhook URL + payload format to automate alerts → orders.\n"
+        "7) Webhooks: test tools + logs for automation events.\n"
+        "8) Settings: keys (OpenAI, Rupeezy), risk limits, paper trading toggle.\n"
+        "9) Contact: schedule meetings + support.\n"
+        "\n"
+        "Tell me which broker workflow you want (manual, Chartink, TradingView) and I’ll guide the exact setup.\n"
+        "— ProBot, ProTrades"
+    )
+
+
 def _offline_data_reply(user_text: str, snapshot: dict | None, broker: BrokerSession | None) -> str:
     """
     No LLM key: answer from Rupeezy/Vortex snapshot + NSE CA already loaded in Market,
     plus short rule-based hints when relevant.
     """
     ut = (user_text or "").lower().strip()
+    if any(k in ut for k in ("services", "features", "what is protrades", "what can you do", "help", "tabs")):
+        return _services_reply()
+    if any(k in ut for k in ("contact", "meeting", "schedule", "call", "support")):
+        return (
+            "You can contact and schedule a meeting from the Contact tab.\n"
+            "Use it for onboarding, automation setup (Chartink/TradingView), or troubleshooting.\n"
+            "— ProBot, ProTrades"
+        )
     blocks: list[str] = []
 
     if broker is not None and snapshot is not None:
@@ -181,9 +208,22 @@ def _system_prompt(
             "Interpret and explain it; do not replace it with guesses. For broad indices (Nifty/Sensex) or news, use web search.\n"
         )
 
+    services_block = """ProTrades services (tabs) you can explain:
+- Intel: watchlist + holdings intelligence, corporate actions filtered to portfolio
+- Market: Rupeezy/Vortex snapshot (LTP, day % vs open, P&L)
+- Watchlist: manage symbols that power Intel/Market
+- Holdings: broker-synced holdings table
+- Trade: manual order entry routed via Rupeezy/Vortex (risk + paper mode enforced)
+- Chartink: webhook URL + payload format for Chartink alerts → ProTrades
+- Webhooks: test tools + logs across automation sources
+- Settings: keys + risk config + paper trading
+- Contact: schedule meetings + support
+"""
+
     return f"""You are ProBot, the AI market assistant for ProTrades — a professional algo trading platform for Indian markets.
 Today's date is {today}.
 {snap_block}
+{services_block}
 Your job:
 1. USER'S BOOK: Start from the LIVE DATA block when present — analyze moves, P&L, and corporate actions for their symbols.
 2. MARKET CONTEXT: Where helpful, summarize Nifty/Sensex/Bank Nifty and themes (do not claim web sources unless the user provides them).

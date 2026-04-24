@@ -1,16 +1,26 @@
 import { useEffect, useState } from "react";
 import { Link } from "react-router-dom";
 import { api } from "../api.js";
+import WebhookUrlBlock from "../components/WebhookUrlBlock.jsx";
+
+const CHARTINK_SAMPLE = `{
+  "stocks": "RELIANCE,TCS",
+  "trigger_prices": "123.45,456.0",
+  "action": "BUY"
+}`;
 
 export default function Webhooks() {
   const [key, setKey] = useState("");
   const [logs, setLogs] = useState([]);
+  const [urls, setUrls] = useState({});
 
   const load = async () => {
     const s = await api("/api/settings");
     setKey(s.protrades_api_key || "");
     const l = await api("/api/logs?limit=30");
     setLogs(l);
+    const u = await api("/api/webhook-urls");
+    setUrls(u || {});
   };
 
   useEffect(() => {
@@ -34,6 +44,8 @@ export default function Webhooks() {
     });
     load().catch(() => {});
   };
+
+  const chartinkUrl = urls?.chartink && key ? `${urls.chartink}?key=${encodeURIComponent(key)}` : urls?.chartink || "";
 
   return (
     <div className="space-y-8">
@@ -69,6 +81,32 @@ export default function Webhooks() {
         >
           Test fire (Python sample)
         </button>
+      </section>
+
+      <section className="space-y-4">
+        <h2 className="font-headline text-sm font-semibold text-on-surface">Chartink webhook</h2>
+        <p className="text-xs text-on-surface-variant">
+          Use this URL in Chartink alerts. Chartink can’t always set custom headers, so ProTrades supports auth via{" "}
+          <code className="text-primary">?key=</code>.
+        </p>
+
+        <WebhookUrlBlock
+          title="Chartink → ProTrades"
+          description="Paste into Chartink Webhook URL. Sends BUY/SELL signals into the same risk + paper-trading pipeline."
+          url={chartinkUrl}
+          icon="bolt"
+        />
+
+        <div className="card-qe border border-outline-variant/10">
+          <h3 className="font-headline text-sm font-semibold text-on-surface">Payload format</h3>
+          <p className="mt-1 text-xs text-on-surface-variant">
+            ProTrades expects <code className="text-primary">stocks</code> as a comma-separated list. Optional{" "}
+            <code className="text-primary">trigger_prices</code> can be comma-separated too (same order).
+          </p>
+          <pre className="mt-3 overflow-x-auto rounded-md bg-surface-container p-3 text-[11px] text-on-surface">
+            {CHARTINK_SAMPLE}
+          </pre>
+        </div>
       </section>
 
       <section>

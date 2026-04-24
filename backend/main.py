@@ -7,7 +7,8 @@ from fastapi.staticfiles import StaticFiles
 
 from config import get_settings
 from database import init_db
-from routes import auth, intel, market, orders, probot, settings_api
+from routes import auth, intel, market, orders, probot, settings_api, webhooks
+from routes.trade import router as trade_router
 from pathlib import Path
 
 
@@ -35,6 +36,8 @@ app.include_router(settings_api.router, prefix="/api")
 app.include_router(probot.router, prefix="/api")
 app.include_router(market.router, prefix="/api")
 app.include_router(intel.router, prefix="/api")
+app.include_router(trade_router, prefix="/api")
+app.include_router(webhooks.router, prefix="/webhook")
 
 
 @app.get("/api/health")

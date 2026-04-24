@@ -1,5 +1,6 @@
 import { Navigate, Outlet, Route, Routes } from "react-router-dom";
 import Layout from "./components/Layout.jsx";
+import Landing from "./pages/Landing.jsx";
 import Login from "./pages/Login.jsx";
 import Holdings from "./pages/Holdings.jsx";
 import SettingsPage from "./pages/Settings.jsx";
@@ -22,9 +23,9 @@ function PrivateLayout() {
 export default function App() {
   return (
     <Routes>
+      <Route path="/" element={<Landing />} />
       <Route path="/login" element={<Login />} />
       <Route element={<PrivateLayout />}>
-        <Route path="/" element={<Navigate to="/intel" replace />} />
         <Route path="/intel" element={<Intel />} />
         <Route path="/market" element={<MarketBrief />} />
         <Route path="/watchlist" element={<Watchlist />} />

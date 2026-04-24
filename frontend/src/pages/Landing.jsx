@@ -6,6 +6,22 @@ import { api, getToken } from "../api.js";
 const RUPEEZY_REFERRAL_URL =
   "https://rupeezy.in/open-demat-account?referred_by=9Gcb9&clicked=true";
 
+function Feature({ icon, title, children }) {
+  return (
+    <div className="rounded-2xl border border-outline-variant/30 bg-surface-container p-6 shadow-ambient">
+      <div className="flex items-start gap-4">
+        <div className="flex h-11 w-11 shrink-0 items-center justify-center rounded-xl bg-primary/10 text-primary">
+          <MsIcon name={icon} className="text-2xl" />
+        </div>
+        <div className="min-w-0">
+          <h3 className="font-headline text-base font-semibold text-on-surface">{title}</h3>
+          <p className="mt-2 text-sm leading-relaxed text-on-surface-variant">{children}</p>
+        </div>
+      </div>
+    </div>
+  );
+}
+
 export default function Landing() {
   const nav = useNavigate();
 
@@ -73,7 +89,8 @@ export default function Landing() {
         </div>
       </header>
 
-      <main className="relative z-10 mx-auto grid w-full max-w-6xl gap-8 pb-16 pt-4 lg:grid-cols-2 lg:items-center">
+      <main className="relative z-10 mx-auto w-full max-w-6xl pb-16 pt-4">
+        <section className="grid gap-8 lg:grid-cols-2 lg:items-center">
         <section className="space-y-6">
           <div>
             <p className="inline-flex items-center gap-2 rounded-full border border-outline-variant/15 bg-surface/30 px-3 py-1 text-[11px] font-medium text-on-surface-variant">
@@ -85,8 +102,8 @@ export default function Landing() {
               <span className="block text-primary">Then trade smarter with ProTrades.</span>
             </h1>
             <p className="mt-4 max-w-xl text-sm text-on-surface-variant md:text-base">
-              Use my referral link to open your Rupeezy account. After you’re set up, log into ProTrades to see holdings,
-              watchlist intel, corporate actions, and place orders through the Rupeezy/Vortex API.
+              ProTrades is a fast, modern dashboard built around the Rupeezy/Vortex API. Track your holdings, build a watchlist,
+              spot corporate actions, automate entries with webhooks, and place manual orders — all in one clean workflow.
             </p>
           </div>
 
@@ -160,6 +177,74 @@ export default function Landing() {
           <div className="rounded-xl border border-outline-variant/15 bg-surface/30 p-5 text-xs text-on-surface-variant">
             Note: The Rupeezy account opening page is hosted by Rupeezy, so ProTrades can’t change its theme or buttons.
             This landing page is your branded entry point.
+          </div>
+        </section>
+        </section>
+
+        <section className="mt-14">
+          <div className="flex flex-wrap items-end justify-between gap-4">
+            <div>
+              <h2 className="font-headline text-2xl font-bold tracking-tight text-on-surface">What you get in ProTrades</h2>
+              <p className="mt-2 max-w-2xl text-sm text-on-surface-variant">
+                Built for speed and clarity. Everything is designed so you can scan, decide, and execute without jumping between tabs.
+              </p>
+            </div>
+            <button
+              type="button"
+              onClick={() => nav("/login")}
+              className="rounded-md bg-gradient-to-br from-primary to-primary-container px-5 py-3 text-sm font-semibold text-on-primary-fixed hover:opacity-95"
+            >
+              Get started → Login
+            </button>
+          </div>
+
+          <div className="mt-6 grid gap-4 lg:grid-cols-2">
+            <Feature icon="auto_awesome" title="Intel (news + signals)">
+              One screen to see what matters for your holdings + watchlist. Corporate actions are filtered to your symbols so you don’t miss ex-dates.
+            </Feature>
+            <Feature icon="candlestick_chart" title="Market brief (snapshot)">
+              Auto-generated snapshot from synced broker data: LTP, day % move vs open, and position P&amp;L (when available). Fast refresh and scrollable lists.
+            </Feature>
+            <Feature icon="visibility" title="Watchlist">
+              Keep a clean symbol list that powers Intel and the market snapshot. Great for tracking setups without mixing with holdings.
+            </Feature>
+            <Feature icon="stacked_line_chart" title="Holdings">
+              Your broker-synced holdings in a clean table. Designed to scale: show ~6–7 rows at a time with a scrollbar and sticky headers.
+            </Feature>
+            <Feature icon="swap_horiz" title="Trade (Rupeezy/Vortex)">
+              Manual order entry routed via the Rupeezy/Vortex API. Risk rules and paper-trading settings are enforced server-side.
+            </Feature>
+            <Feature icon="bolt" title="Automation (Chartink & TradingView)">
+              Send BUY/SELL signals into ProTrades through webhooks. Orders go through the same risk checks and can be logged in paper mode.
+            </Feature>
+          </div>
+        </section>
+
+        <section className="mt-14 rounded-3xl border border-outline-variant/30 bg-surface-container p-8 shadow-ambient">
+          <div className="grid gap-6 lg:grid-cols-3 lg:items-center">
+            <div className="lg:col-span-2">
+              <h2 className="font-headline text-2xl font-bold tracking-tight text-on-surface">
+                Ready to open your Rupeezy account?
+              </h2>
+              <p className="mt-2 text-sm text-on-surface-variant">
+                Use the referral link to open your account. Then come back and log in to ProTrades to connect your session and start using the tools.
+              </p>
+            </div>
+            <div className="flex flex-col gap-3 sm:flex-row lg:flex-col">
+              <a
+                href={RUPEEZY_REFERRAL_URL}
+                target="_blank"
+                rel="noreferrer"
+                className="btn-primary-qe w-auto px-6"
+              >
+                <MsIcon name="person_add" className="text-xl" />
+                Open Rupeezy account
+              </a>
+              <button type="button" onClick={() => nav("/login")} className="btn-secondary-qe w-auto px-6">
+                <MsIcon name="login" className="text-xl" />
+                Login to ProTrades
+              </button>
+            </div>
           </div>
         </section>
       </main>

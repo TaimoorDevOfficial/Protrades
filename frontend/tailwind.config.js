@@ -5,27 +5,28 @@ export default {
   theme: {
     extend: {
       colors: {
-        "surface-container-lowest": "#0b0e11",
-        "surface-container-low": "#191c1f",
-        "surface-container": "#1d2023",
-        "surface-container-high": "#272a2e",
-        "surface-container-highest": "#323538",
-        surface: "#111417",
-        "surface-bright": "#37393d",
-        "surface-variant": "#323538",
-        "on-surface": "#e1e2e7",
-        "on-surface-variant": "#bbc9cf",
-        primary: "#a4e6ff",
-        "primary-container": "#00d1ff",
-        "on-primary-fixed": "#001f28",
-        secondary: "#44e092",
-        "secondary-container": "#03c177",
-        tertiary: "#ffd2cc",
-        "tertiary-container": "#ffaba0",
-        outline: "#859399",
-        "outline-variant": "#3c494e",
-        error: "#ffb4ab",
-        background: "#111417",
+        // Light (Rupeezy-like) theme: white surfaces + blue accents
+        "surface-container-lowest": "#f5f8ff",
+        "surface-container-low": "#ffffff",
+        "surface-container": "#ffffff",
+        "surface-container-high": "#f3f7ff",
+        "surface-container-highest": "#eaf1ff",
+        surface: "#ffffff",
+        "surface-bright": "#f2f6ff",
+        "surface-variant": "#eef3ff",
+        "on-surface": "#0f172a", // slate-900
+        "on-surface-variant": "#475569", // slate-600
+        primary: "#1d4ed8", // blue-700
+        "primary-container": "#3b82f6", // blue-500
+        "on-primary-fixed": "#ffffff",
+        secondary: "#16a34a", // green-600
+        "secondary-container": "#22c55e", // green-500
+        tertiary: "#f97316", // orange-500
+        "tertiary-container": "#ea580c", // orange-600
+        outline: "#cbd5e1", // slate-300
+        "outline-variant": "#e2e8f0", // slate-200
+        error: "#ef4444", // red-500
+        background: "#f5f8ff",
       },
       borderRadius: {
         DEFAULT: "0.125rem",
@@ -40,8 +41,8 @@ export default {
         mono: ["JetBrains Mono", "ui-monospace", "monospace"],
       },
       boxShadow: {
-        ambient: "0 24px 48px rgba(0, 0, 0, 0.5)",
-        "primary-glow": "0 0 24px rgba(164, 230, 255, 0.15)",
+        ambient: "0 24px 48px rgba(2, 6, 23, 0.10)",
+        "primary-glow": "0 0 24px rgba(59, 130, 246, 0.20)",
       },
     },
   },

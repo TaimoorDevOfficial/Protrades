@@ -10,13 +10,13 @@
 
 @layer components {
   .glass-panel {
-    background: rgba(29, 32, 35, 0.65);
-    backdrop-filter: blur(40px);
-    -webkit-backdrop-filter: blur(40px);
+    background: rgba(255, 255, 255, 0.72);
+    backdrop-filter: blur(24px);
+    -webkit-backdrop-filter: blur(24px);
   }
 
   .trading-pattern-bg {
-    background-image: radial-gradient(circle at 2px 2px, rgba(164, 230, 255, 0.05) 1px, transparent 0);
+    background-image: radial-gradient(circle at 2px 2px, rgba(59, 130, 246, 0.08) 1px, transparent 0);
     background-size: 32px 32px;
   }
 
@@ -82,9 +82,9 @@
   height: 6px;
 }
 ::-webkit-scrollbar-track {
-  background: #111417;
+  background: #eaf1ff;
 }
 ::-webkit-scrollbar-thumb {
-  background: #323538;
+  background: #bfdbfe;
   border-radius: 10px;
 }

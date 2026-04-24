@@ -1,10 +1,106 @@
-import { useEffect } from "react";
+import { useEffect, useMemo, useRef } from "react";
 import { useNavigate } from "react-router-dom";
 import MsIcon from "../components/MsIcon.jsx";
 import { api, getToken } from "../api.js";
 
+import imgA from "../scroll-animation/ezgif-frame-030.jpg";
+import imgB from "../scroll-animation/ezgif-frame-066.jpg";
+import imgC from "../scroll-animation/ezgif-frame-092.jpg";
+import imgD from "../scroll-animation/ezgif-frame-139.jpg";
+import imgE from "../scroll-animation/ezgif-frame-171.jpg";
+import imgF from "../scroll-animation/ezgif-frame-213.jpg";
+
 const RUPEEZY_REFERRAL_URL =
   "https://rupeezy.in/open-demat-account?referred_by=9Gcb9&clicked=true";
+
+function prefersReducedMotion() {
+  if (typeof window === "undefined" || !window.matchMedia) return false;
+  return window.matchMedia("(prefers-reduced-motion: reduce)").matches;
+}
+
+function BackgroundScrollArt() {
+  const wrapRef = useRef(null);
+  const refs = useRef([]);
+  const imgs = useMemo(
+    () => [
+      { src: imgA, alt: "", x: "6%", y: "12%", w: "260px", speed: 0.18, rot: -10, o: 0.18, blur: 0 },
+      { src: imgB, alt: "", x: "76%", y: "8%", w: "320px", speed: 0.26, rot: 12, o: 0.14, blur: 0 },
+      { src: imgC, alt: "", x: "14%", y: "55%", w: "360px", speed: 0.22, rot: 8, o: 0.12, blur: 0 },
+      { src: imgD, alt: "", x: "68%", y: "52%", w: "280px", speed: 0.16, rot: -6, o: 0.12, blur: 0 },
+      { src: imgE, alt: "", x: "8%", y: "86%", w: "300px", speed: 0.12, rot: 14, o: 0.10, blur: 0 },
+      { src: imgF, alt: "", x: "74%", y: "88%", w: "360px", speed: 0.20, rot: -12, o: 0.10, blur: 0 },
+    ],
+    []
+  );
+
+  useEffect(() => {
+    if (prefersReducedMotion()) return;
+    const el = wrapRef.current;
+    if (!el) return;
+
+    let raf = 0;
+    const onScroll = () => {
+      if (raf) return;
+      raf = window.requestAnimationFrame(() => {
+        raf = 0;
+        const doc = document.documentElement;
+        const max = Math.max(1, doc.scrollHeight - window.innerHeight);
+        const p = Math.min(1, Math.max(0, window.scrollY / max));
+        const center = p - 0.5;
+        const range = 220; // px
+
+        refs.current.forEach((node, i) => {
+          if (!node) return;
+          const cfg = imgs[i];
+          const dy = center * range * (cfg.speed || 0.2);
+          node.style.transform = `translate3d(0, ${dy.toFixed(1)}px, 0) rotate(${cfg.rot || 0}deg)`;
+        });
+      });
+    };
+
+    onScroll();
+    window.addEventListener("scroll", onScroll, { passive: true });
+    window.addEventListener("resize", onScroll);
+    return () => {
+      window.removeEventListener("scroll", onScroll);
+      window.removeEventListener("resize", onScroll);
+      if (raf) window.cancelAnimationFrame(raf);
+    };
+  }, [imgs]);
+
+  return (
+    <div ref={wrapRef} className="landing-scroll-art pointer-events-none absolute inset-0 z-0">
+      {imgs.map((it, idx) => (
+        <div
+          key={idx}
+          className="absolute"
+          style={{
+            left: it.x,
+            top: it.y,
+            width: it.w,
+            opacity: it.o,
+          }}
+        >
+          <img
+            ref={(n) => {
+              refs.current[idx] = n;
+            }}
+            src={it.src}
+            alt={it.alt}
+            className="h-auto w-full select-none rounded-2xl"
+            style={{
+              willChange: "transform",
+              filter: it.blur ? `blur(${it.blur}px)` : undefined,
+              boxShadow: "0 24px 60px rgba(2, 6, 23, 0.10)",
+            }}
+            draggable={false}
+          />
+        </div>
+      ))}
+      <div className="absolute inset-0 bg-gradient-to-b from-surface-container-lowest/0 via-surface-container-lowest/0 to-surface-container-lowest/70" />
+    </div>
+  );
+}
 
 function Feature({ icon, title, children }) {
   return (
@@ -38,6 +134,7 @@ export default function Landing() {
   return (
     <div className="relative min-h-screen overflow-hidden bg-surface-container-lowest px-4 font-body text-on-surface selection:bg-primary selection:text-on-primary-fixed">
       <div className="trading-pattern-bg pointer-events-none absolute inset-0 z-0 opacity-40" />
+      <BackgroundScrollArt />
       <div className="pointer-events-none absolute inset-0 z-0 flex items-center justify-center overflow-hidden opacity-[0.12]">
         <svg className="h-full w-full" preserveAspectRatio="none" viewBox="0 0 1000 400">
           <path

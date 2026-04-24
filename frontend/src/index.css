@@ -20,6 +20,26 @@
     background-size: 32px 32px;
   }
 
+  .landing-scroll-art img {
+    mix-blend-mode: multiply;
+  }
+
+  @media (prefers-reduced-motion: reduce) {
+    .landing-scroll-art {
+      display: none;
+    }
+  }
+
+  .landing-scroll-art img {
+    mix-blend-mode: multiply;
+  }
+
+  @media (prefers-reduced-motion: reduce) {
+    .landing-scroll-art {
+      display: none;
+    }
+  }
+
   .input-qe {
     @apply block w-full rounded-md border-none bg-surface-container-high py-3 pl-3 pr-3 text-sm text-on-surface placeholder:text-outline/50 transition-all focus:ring-1 focus:ring-primary;
   }

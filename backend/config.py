@@ -28,8 +28,9 @@ class Settings(BaseSettings):
     vortex_application_id: str = ""
     vortex_x_api_key: str = ""
     public_mode: bool = False
-    claude_key: str = ""
-    claude_model: str = "claude-sonnet-4-20250514"
+    # LLM (OpenAI). If unset, ProBot runs in offline data mode.
+    openai_key: str = ""
+    openai_model: str = "gpt-4.1-mini"
     jwt_algorithm: str = "HS256"
     access_token_expire_minutes: int = 60 * 24
     cors_origins: str = "http://localhost:5173,http://127.0.0.1:5173"

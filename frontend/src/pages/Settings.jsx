@@ -5,7 +5,7 @@ import { api, setToken } from "../api.js";
 export default function SettingsPage() {
   const nav = useNavigate();
   const [data, setData] = useState(null);
-  const [claude, setClaude] = useState("");
+  const [openai, setOpenai] = useState("");
   const [rkey, setRkey] = useState("");
   const [rsec, setRsec] = useState("");
 
@@ -22,12 +22,12 @@ export default function SettingsPage() {
     await api("/api/settings/keys", {
       method: "POST",
       body: JSON.stringify({
-        claude_key: claude || undefined,
+        openai_key: openai || undefined,
         rupeezzy_api_key: rkey || undefined,
         rupeezzy_api_secret: rsec || undefined,
       }),
     });
-    setClaude("");
+    setOpenai("");
     setRkey("");
     setRsec("");
     load();
@@ -41,16 +41,16 @@ export default function SettingsPage() {
       </div>
 
       <section className="card-qe border border-outline-variant/10">
-        <h2 className="font-headline text-sm font-semibold text-on-surface">Anthropic and Rupeezy</h2>
+        <h2 className="font-headline text-sm font-semibold text-on-surface">OpenAI and Rupeezy</h2>
         <p className="mt-1 text-xs text-on-surface-variant">Stored encrypted server-side</p>
         <label className="mt-3 block text-sm text-on-surface-variant">
-          Claude API key
+          OpenAI API key
           <input
             type="password"
             className="input-qe mt-1"
-            value={claude}
-            onChange={(e) => setClaude(e.target.value)}
-            placeholder={data?.has_claude_key ? "••••••••" : ""}
+            value={openai}
+            onChange={(e) => setOpenai(e.target.value)}
+            placeholder={data?.has_openai_key ? "••••••••" : ""}
           />
         </label>
         <label className="mt-3 block text-sm text-on-surface-variant">

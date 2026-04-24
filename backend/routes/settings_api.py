@@ -26,7 +26,7 @@ class RiskBody(BaseModel):
 
 
 class KeysBody(BaseModel):
-    claude_key: str | None = None
+    openai_key: str | None = None
     rupeezzy_api_key: str | None = None
     rupeezzy_api_secret: str | None = None
 
@@ -36,7 +36,7 @@ def get_settings_api(db: Session = Depends(get_db), _: None = Depends(require_se
     return {
         "protrades_api_key": ensure_protrades_api_key(db),
         "risk": get_risk_dict(db),
-        "has_claude_key": bool(get_setting(db, "claude_key_store")),
+        "has_openai_key": bool(get_setting(db, "openai_key_store")),
         "public_app_url": get_settings().public_app_url,
     }
 
@@ -60,8 +60,8 @@ def post_risk(body: RiskBody, db: Session = Depends(get_db), _: None = Depends(r
 
 @router.post("/keys")
 def post_keys(body: KeysBody, db: Session = Depends(get_db), _: None = Depends(require_session)):
-    if body.claude_key:
-        set_setting(db, "claude_key_store", body.claude_key, encrypt=True)
+    if body.openai_key:
+        set_setting(db, "openai_key_store", body.openai_key, encrypt=True)
     if body.rupeezzy_api_key:
         set_setting(db, "rupeezzy_api_key", body.rupeezzy_api_key, encrypt=True)
     if body.rupeezzy_api_secret:

@@ -2,7 +2,7 @@ import logging
 from datetime import datetime
 
 import pytz
-from anthropic import Anthropic
+import httpx
 from fastapi import APIRouter, Depends, HTTPException
 from pydantic import BaseModel
 from sqlalchemy.orm import Session
@@ -156,7 +156,7 @@ def _offline_data_reply(user_text: str, snapshot: dict | None, broker: BrokerSes
         blocks.append(hint)
 
     blocks.append("")
-    blocks.append("Add CLAUDE_KEY in the server `.env` or Settings for AI analysis, deeper commentary, and web search.")
+    blocks.append("Add OPENAI_KEY in the server `.env` or Settings for AI analysis and deeper commentary.")
     blocks.append("— ProBot, ProTrades")
     return "\n".join(blocks)
 
@@ -182,17 +182,17 @@ def _system_prompt(
         )
 
     return f"""You are ProBot, the AI market assistant for ProTrades — a professional algo trading platform for Indian markets.
-You have access to web search. Today's date is {today}.
+Today's date is {today}.
 {snap_block}
 Your job:
 1. USER'S BOOK: Start from the LIVE DATA block when present — analyze moves, P&L, and corporate actions for their symbols.
-2. MARKET CONTEXT: Where helpful, summarize Nifty/Sensex/Bank Nifty and themes using web search (sources required).
+2. MARKET CONTEXT: Where helpful, summarize Nifty/Sensex/Bank Nifty and themes (do not claim web sources unless the user provides them).
 3. CORPORATE ACTIONS: Cross-check filings/news for timing; the LIVE DATA list is filtered to their portfolio.
 4. USER QUERIES: Answer trading/market questions clearly. Distinguish facts (from LIVE DATA or cited web) from opinion.
 
 Watchlist symbols: [{watch_syms}]. Raw holdings JSON (broker sync): {holdings}
 
-Always cite sources for anything not from LIVE DATA. Use ₹ with Indian number formatting (lakhs/crores).
+Do not invent sources. Use ₹ with Indian number formatting (lakhs/crores).
 Market hours: Pre-open 9:00–9:15 AM, Regular 9:15 AM–3:30 PM, Closing 3:30–4:00 PM IST.
 Outside hours: Note session vs last close where relevant.
 Sign off responses with: "— ProBot, ProTrades"
@@ -206,7 +206,7 @@ async def probot_chat(
     broker: BrokerSession | None = Depends(get_broker_session),
 ):
     settings = get_settings()
-    api_key = settings.claude_key or get_setting(db, "claude_key_store")
+    api_key = settings.openai_key or get_setting(db, "openai_key_store")
 
     msgs = [{"role": m.role, "content": m.content} for m in body.messages if m.content.strip()]
     if not msgs:
@@ -228,38 +228,33 @@ async def probot_chat(
         db.commit()
         return {"reply": text, "model": "rules-offline", "source": "rules-data"}
 
-    client = Anthropic(api_key=api_key)
     sys = _system_prompt(db, broker, live_snapshot=live_snapshot)
 
-    tools = [{"type": "web_search_20250305", "name": "web_search", "max_uses": 5}]
-
+    # OpenAI Chat Completions over raw HTTP (no extra dependency).
+    payload = {
+        "model": settings.openai_model,
+        "messages": [{"role": "system", "content": sys}, *msgs],
+        "temperature": 0.3,
+    }
+    headers = {
+        "Authorization": f"Bearer {api_key}",
+        "Content-Type": "application/json",
+    }
+    async with httpx.AsyncClient(timeout=45.0) as client:
+        r = await client.post("https://api.openai.com/v1/chat/completions", headers=headers, json=payload)
+        if not r.is_success:
+            raise HTTPException(status_code=502, detail=f"OpenAI error: {r.status_code} {r.text[:400]}")
+        data = r.json()
     try:
-        response = client.messages.create(
-            model=settings.claude_model,
-            max_tokens=4096,
-            system=sys,
-            messages=msgs,
-            tools=tools,
-        )
+        text = str(data["choices"][0]["message"]["content"] or "").strip()
     except Exception:
-        response = client.messages.create(
-            model=settings.claude_model,
-            max_tokens=4096,
-            system=sys,
-            messages=msgs,
-        )
-
-    parts = []
-    for block in response.content:
-        if hasattr(block, "text"):
-            parts.append(block.text)
-    text = "\n".join(parts).strip()
+        raise HTTPException(status_code=502, detail="OpenAI error: invalid response shape")
 
     db.add(ChatHistory(session_id=body.session_id, role="user", content=user_msg))
     db.add(ChatHistory(session_id=body.session_id, role="assistant", content=text))
     db.commit()
 
-    return {"reply": text, "model": settings.claude_model, "source": "claude"}
+    return {"reply": text, "model": settings.openai_model, "source": "openai"}
 
 
 class FeedbackBody(BaseModel):
@@ -297,5 +292,5 @@ def briefing_ack(db: Session = Depends(get_db)):
 def morning_preview(db: Session = Depends(get_db), broker: BrokerSession | None = Depends(get_broker_session)):
     """Lightweight canned line; full snapshot via ProBot /chat (offline data or AI)."""
     return {
-        "text": "Good morning! Open ProBot for your snapshot from synced Rupeezy data (prices + corporate actions). Add an Anthropic key in Settings for AI analysis and web search.",
+        "text": "Good morning! Open ProBot for your snapshot from synced Rupeezy data (prices + corporate actions). Add an OpenAI key in Settings for AI analysis.",
     }
